@@ -1,32 +1,45 @@
 import { VFC, useRef } from 'react';
 import Carousel from 'react-unstuled-carousel';
 
-const items = Array.from({ length: 10 }, (_, index) => index);
+const items = Array.from({ length: 20 }, (_, index) => index);
 
-const TRANSITION = 'transform 1s ease';
+const TRANSITION = 'transform .3s ease';
 
 const Home: VFC = () => {
   const kek = useRef<any>(null);
   return (
     <>
-      <Carousel
-        ref={kek}
-        className='carousel'
-        items={items}
-        infinity
-        defaultIndex={7}
-        viewOffset={3}
-        gap='9px'
-        renderItem={(item, index) => (
-          <div
-            className='item'
-            key={index}
-            style={{ background: index % 2 ? 'yellow' : 'blue' }}
-          >
-            {item as any}
-          </div>
-        )}
-      />
+      <div>
+        <div>
+          <Carousel
+            ref={kek}
+            className='carousel'
+            items={items}
+            infinity
+            autoSize
+            // defaultIndex={7}
+            viewOffset={3}
+            // lazy={1}
+            gap='9px'
+            renderItem={(item, index) => (
+              <div
+                className='item'
+                key={index}
+                style={{ background: index % 2 ? 'yellow' : 'blue' }}
+              >
+                {item as any}
+              </div>
+            )}
+          />
+        </div>
+      </div>
+      <button
+        onClick={() => {
+          kek.current!.go(-2, TRANSITION);
+        }}
+      >
+        prev2
+      </button>
       <button
         onClick={() => {
           kek.current!.go(-1, TRANSITION);
@@ -43,32 +56,36 @@ const Home: VFC = () => {
       </button>
       <button
         onClick={() => {
-          kek.current!.goTo(0, TRANSITION);
+          kek.current!.go(2, TRANSITION);
         }}
       >
-        0
+        next2
       </button>
       <button
         onClick={() => {
-          kek.current!.goTo(9, TRANSITION);
+          kek.current!.go(4, TRANSITION);
         }}
       >
-        9
+        next4
       </button>
       <button
         onClick={() => {
-          kek.current!.goTo(5, TRANSITION);
+          kek.current!.go(5, TRANSITION);
         }}
       >
-        5
+        next5
       </button>
-      <button
-        onClick={() => {
-          kek.current!.goTo(3, TRANSITION);
-        }}
-      >
-        3
-      </button>
+      <br />
+      {items.map((item) => (
+        <button
+          key={item}
+          onClick={() => {
+            kek.current!.goTo(item, TRANSITION);
+          }}
+        >
+          {item}
+        </button>
+      ))}
     </>
   );
 };

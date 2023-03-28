@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import setRef from './utils/setRef';
+import positiveOrZero from './utils/positiveOrZero';
 
 type TCarouselContext = {
   currIndex: number;
@@ -39,55 +40,65 @@ type Props<T> = {
   gap?: string;
   swipeEndTransition?: string;
   disableSwipe?: boolean;
+  autoSize?: boolean;
 };
 
-const handleItems = (props: Props<unknown>, prependIndex: number) => {
+const DEFAULT_FAST_TRANSITION = '.1s ease';
+
+const handleItems = (
+  props: Props<unknown>,
+  currLazyRenderIndex: number,
+  nextLazyRenderIndex: number
+) => {
   const arr: JSX.Element[] = [];
 
-  const { renderItem, items } = props;
+  const { renderItem, items, lazy, viewOffset = 0 } = props;
 
   const l = items.length;
 
-  // if (props.infinity && props.viewOffset) {
-  //   const additionalSlides = Math.ceil(props.viewOffset);
-
-  //   const endIndex = l + additionalSlides;
-  //   const startIndex = l - additionalSlides;
-
-  //   for (var i = 0; i < additionalSlides; i++) {
-  //     const item = renderItem(items[i], i);
-
-  //     arr[i + additionalSlides] = item;
-
-  //     arr[i + endIndex] = { ...item, key: '$' + item.key };
-  //   }
-
-  //   for (; i < startIndex; i++) {
-  //     arr[i + additionalSlides] = renderItem(items[i], i);
-  //   }
-
-  //   for (; i < l; i++) {
-  //     const item = renderItem(items[i], i);
-
-  //     arr[i - startIndex] = { ...item, key: '$' + item.key };
-
-  //     arr[i + additionalSlides] = item;
-  //   }
-  // } else {
-  if (prependIndex) {
-    for (let i = prependIndex; i < l; i++) {
-      arr.push(renderItem(items[i], i));
-    }
-
-    for (let i = 0; i < prependIndex; i++) {
-      arr.push(renderItem(items[i], i));
-    }
-  } else {
+  if (lazy == undefined || lazy * 2 + viewOffset + 1 >= l) {
     for (let i = 0; i < l; i++) {
       arr.push(renderItem(items[i], i));
     }
+  } else {
+    // currLazyRenderIndex = 0;
+    // nextLazyRenderIndex = -4;
+    console.log(currLazyRenderIndex, nextLazyRenderIndex);
+    const start = Math.min(currLazyRenderIndex - lazy, nextLazyRenderIndex);
+
+    const end =
+      Math.max(currLazyRenderIndex + lazy, nextLazyRenderIndex) +
+      viewOffset +
+      1;
+
+    console.log(start, end);
+
+    const overLeft = end - l;
+
+    const clumpedEnd = Math.min(end, l);
+
+    if (overLeft > 0) {
+      console.log(overLeft, start);
+
+      for (let i = 0; i < overLeft; i++) {
+        arr.push(renderItem(items[i], i));
+      }
+    }
+
+    for (let i = Math.max(start, arr.length); i < clumpedEnd; i++) {
+      arr.push(renderItem(items[i], i));
+    }
+
+    if (start < 0) {
+      const overRight = l + start;
+
+      for (let i = Math.max(overRight, clumpedEnd); i < l; i++) {
+        arr.push(renderItem(items[i], i));
+      }
+    }
+
+    console.log(arr);
   }
-  // }
 
   return arr;
 };
@@ -96,12 +107,14 @@ const Carousel = forwardRef<
   TCarouselContext,
   PropsWithChildren<Props<unknown>>
 >((props, ref) => {
-  const [prependIndex] = useState(0);
+  const { viewOffset = 0, vertical, gap, defaultIndex = 0, autoSize } = props;
+
+  const [lazyRenderIndexes, setLazyRenderIndexes] = useState([
+    defaultIndex,
+    defaultIndex,
+  ] as const);
+
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const enabled = !props.disabled;
-
-  const { viewOffset, vertical, gap } = props;
 
   const propsRef = useRef(props);
 
@@ -112,37 +125,60 @@ const Carousel = forwardRef<
   useLayoutEffect(() => {
     const style = containerRef.current!.style;
 
-    style.gridAutoFlow = vertical ? 'row' : 'column';
-
-    style.removeProperty(`grid-auto-${vertical ? 'columns' : 'rows'}`);
-
-    style.removeProperty(vertical ? 'width' : 'height');
-
-    const key = `gridAuto${vertical ? 'Rows' : 'Columns'}` as const;
+    const key = `gridAuto${
+      vertical ? 'Rows' : 'Columns'
+    }` satisfies keyof CSSStyleDeclaration;
 
     const percent = 100 / (1 + (viewOffset || 0)) + '%';
+
+    style.gridAutoFlow = vertical ? 'row' : 'column';
 
     if (gap) {
       style.gap = gap;
 
       style[key] = `calc(${percent} - ${gap})`;
 
-      style[vertical ? 'height' : 'width'] = `calc(100% + ${gap})`;
+      style[
+        (vertical ? 'height' : 'width') satisfies keyof CSSStyleDeclaration
+      ] = `calc(100% + ${gap})`;
     } else {
       style[key] = percent;
     }
+
+    return () => {
+      style.removeProperty(`grid-auto-${vertical ? 'columns' : 'rows'}`);
+
+      style.removeProperty(vertical ? 'width' : 'height');
+    };
   }, [viewOffset, vertical, gap]);
+
+  useLayoutEffect(() => {
+    if (autoSize) {
+      const container = containerRef.current!;
+
+      const wrapper = container.parentElement!;
+
+      wrapper.style.width =
+        container.children[0].clientWidth * (viewOffset + 1) +
+        (container.clientWidth - wrapper.clientWidth) * viewOffset +
+        'px';
+
+      return () => {
+        wrapper.style.removeProperty('width');
+      };
+    }
+  }, [autoSize, viewOffset]);
 
   useLayoutEffect(() => {
     const container = containerRef.current!;
 
     const wrapper = container.parentElement!;
 
-    const translateAxis = `translate${vertical ? 'Y' : 'X'}(`;
+    const translateAxis = `translate${vertical ? 'Y' : 'X'}(` as const;
 
     const style = container.style;
 
-    let currIndex = props.defaultIndex || 0;
+    let currIndex = defaultIndex;
 
     let realIndex: number;
 
@@ -161,13 +197,15 @@ const Carousel = forwardRef<
     style.display = 'grid';
 
     const translate = (index: number) => {
-      realIndex = index;
+      if (index != realIndex) {
+        realIndex = index;
 
-      style.transform = translateAxis + getPercent(index) + ')';
+        style.transform = translateAxis + getPercent(index) + ')';
+      }
     };
 
     const clamp = (index: number) =>
-      Math.max(Math.min(index, container.children.length - 1), 0);
+      Math.max(Math.min(index, propsRef.current.items.length - 1), 0);
 
     const handleSwipeListener = <
       K extends Extract<keyof HTMLElementEventMap, 'mousemove' | 'touchmove'>
@@ -176,13 +214,7 @@ const Carousel = forwardRef<
       endEvent: K extends 'mousemove' ? 'mouseup' : 'touchend',
       getOffset: (e: HTMLElementEventMap[K]) => number
     ) => {
-      const width = wrapper.offsetHeight;
-
-      const gap = container.offsetWidth - width;
-
-      const viewOffset = propsRef.current.viewOffset || 0;
-
-      const itemWidth = width / (1 + viewOffset) + gap;
+      let resolve!: () => void;
 
       let handle: number;
 
@@ -192,22 +224,49 @@ const Carousel = forwardRef<
 
       let currRealIndex = realIndex;
 
+      const gap = container.offsetWidth - wrapper.offsetWidth;
+
+      const props = propsRef.current;
+
+      const viewOffset = props.viewOffset || 0;
+
+      // const lazy = props.lazy;
+
+      const itemWidth = container.children[0].clientWidth + gap;
+
       const children = container.children as HTMLCollectionOf<HTMLElement>;
 
-      const childrenCount = children.length;
+      const itemsCount = props.items.length;
 
-      const lastChildIndex = childrenCount - 1;
+      const lastItemIndex = itemsCount - 1;
 
       const distToStart = currIndex * itemWidth;
 
-      const distToEnd = (lastChildIndex - currIndex - viewOffset) * itemWidth;
+      const distToEnd = (lastItemIndex - currIndex - viewOffset) * itemWidth;
+
+      // const isLazy =
+      //   lazy != undefined && lazy * 2 + 1 + viewOffset < itemsCount;
+
+      const promise = new Promise<void>((_resolve) => {
+        resolve = () => {
+          requestAnimationFrame(() => {
+            if (promise == currPromise) {
+              currPromise = undefined;
+            }
+
+            _resolve();
+          });
+        };
+      });
 
       const movingListener = (e: HTMLElementEventMap[K]) => {
         cancelAnimationFrame(handle);
 
         offset = getOffset(e);
 
-        if (offset) {
+        if (offset && isFree) {
+          currPromise ||= promise;
+
           handle = requestAnimationFrame(() => {
             const l = styles.length;
 
@@ -215,10 +274,13 @@ const Carousel = forwardRef<
               const dist = distToStart - offset;
 
               if (dist > 0) {
-                console.log('1');
                 const count = Math.ceil(dist / itemWidth - Number.EPSILON);
 
-                const index = count - lastChildIndex + viewOffset;
+                const index = count - lastItemIndex + viewOffset;
+
+                // if (isLazy) {
+
+                // }
 
                 newCurrIndex = count;
 
@@ -240,13 +302,11 @@ const Carousel = forwardRef<
                   removeOrder(0);
                 }
               } else {
-                console.log('2');
-
                 const count = Math.floor(Number.EPSILON - dist / itemWidth) + 1;
 
                 if (count > l) {
                   for (let i = l; i < count; i++) {
-                    const style = children[lastChildIndex - i].style;
+                    const style = children[lastItemIndex - i].style;
 
                     style.order = -styles.push(style) as any;
                   }
@@ -254,7 +314,7 @@ const Carousel = forwardRef<
                   removeOrder(count);
                 }
 
-                newCurrIndex = childrenCount - count + 1;
+                newCurrIndex = itemsCount - count + 1;
 
                 currRealIndex = 1;
               }
@@ -262,16 +322,13 @@ const Carousel = forwardRef<
               const dist = distToEnd + offset;
 
               if (dist > 0) {
-                console.log('3');
                 currRealIndex = newCurrIndex =
-                  lastChildIndex -
+                  lastItemIndex -
                   Math.ceil(dist / itemWidth - Number.EPSILON) -
                   viewOffset;
 
                 removeOrder(0);
               } else {
-                console.log('4');
-
                 const count = Math.floor(Number.EPSILON - dist / itemWidth) + 1;
 
                 if (count > l) {
@@ -284,9 +341,9 @@ const Carousel = forwardRef<
                   removeOrder(count);
                 }
 
-                currRealIndex = lastChildIndex - viewOffset - 1;
+                currRealIndex = lastItemIndex - viewOffset - 1;
 
-                newCurrIndex = (currRealIndex + count) % childrenCount;
+                newCurrIndex = (currRealIndex + count) % itemsCount;
               }
             }
 
@@ -306,17 +363,13 @@ const Carousel = forwardRef<
 
         const additionalIndex = Math.round((offset % itemWidth) / itemWidth);
 
-        console.log(
-          newCurrIndex,
-          additionalIndex,
-          (offset % itemWidth) / itemWidth
-        );
-
         handleTransition(
-          'transform .1s ease',
+          DEFAULT_FAST_TRANSITION,
           currRealIndex - additionalIndex,
           () => {
-            goImmediately((newCurrIndex - additionalIndex) % childrenCount);
+            goImmediately((newCurrIndex - additionalIndex) % itemsCount);
+
+            resolve();
           }
         );
       };
@@ -381,7 +434,6 @@ const Carousel = forwardRef<
       index: number,
       callback: () => void
     ) => {
-      console.log(transition);
       const listener = () => {
         container.removeEventListener('transitionend', listener);
 
@@ -406,22 +458,24 @@ const Carousel = forwardRef<
 
       const children = container.children as HTMLCollectionOf<HTMLElement>;
 
-      currIndex = ((index % l) + l) % l;
+      const maxLength = l - viewOffset;
 
-      const realIndex = currIndex % (l - viewOffset);
+      currIndex = ((index % l) + l) % l;
 
       removeOrder(0);
 
-      if (realIndex == currIndex) {
+      if (currIndex < maxLength) {
         translate(currIndex);
       } else {
-        for (let i = 0; i <= realIndex; i++) {
+        const count = l - currIndex;
+
+        for (let i = 0; i < count; i++) {
           const style = children[i].style;
 
           style.order = styles.push(style) as any;
         }
 
-        translate(l - 1 - viewOffset);
+        translate(maxLength - 1);
       }
     };
 
@@ -429,7 +483,11 @@ const Carousel = forwardRef<
 
     let isFirst = true;
 
+    let isFree = true;
+
     const go = async (getDelta: () => number, transition?: string) => {
+      isFree = false;
+
       const prevPromise = currPromise;
 
       let resolve!: () => void;
@@ -441,6 +499,8 @@ const Carousel = forwardRef<
               isFirst = true;
 
               currPromise = undefined;
+
+              isFree = true;
             }
 
             _resolve();
@@ -452,7 +512,7 @@ const Carousel = forwardRef<
 
       if (prevPromise) {
         if (isFirst && style.transition) {
-          style.transition = '.1s ease';
+          style.transition = DEFAULT_FAST_TRANSITION;
 
           style.transform = `${translateAxis}calc(${getPercent(
             realIndex
@@ -461,7 +521,7 @@ const Carousel = forwardRef<
           isFirst = false;
         }
 
-        transition &&= '.1s ease';
+        transition &&= DEFAULT_FAST_TRANSITION;
 
         await prevPromise;
       }
@@ -471,100 +531,119 @@ const Carousel = forwardRef<
       if (!delta) {
         resolve();
       } else if (transition) {
+        const props = propsRef.current;
+
+        const lazy = props.lazy;
+
+        const itemsCount = props.items.length;
+
         const children = container.children as HTMLCollectionOf<HTMLElement>;
 
-        const viewOffset = propsRef.current.viewOffset || 0;
+        const viewOffset = props.viewOffset || 0;
+
+        const isLazy =
+          lazy != undefined && lazy * 2 + 1 + viewOffset < itemsCount;
 
         const prevIndex = currIndex;
 
         const fakeIndex = currIndex + delta;
 
-        const l = children.length;
+        const isCycledGoPrevious = fakeIndex < 0;
 
-        currIndex = ((fakeIndex % l) + l) % l;
+        const maxNonOrderedIndex = itemsCount - viewOffset - 1;
 
-        if (currIndex == fakeIndex) {
-          if (viewOffset && fakeIndex + viewOffset >= l) {
-            if (delta > 0) {
-              requestAnimationFrame(() => {
-                const end = ((fakeIndex + viewOffset) % l) + 1;
+        const prevOrderedCount = positiveOrZero(prevIndex - maxNonOrderedIndex);
 
-                translate(prevIndex - end);
+        currIndex = ((fakeIndex % itemsCount) + itemsCount) % itemsCount;
 
-                for (let i = styles.length; i < end; i++) {
-                  const style = children[i].style;
+        const cycledPrevIndex = isCycledGoPrevious
+          ? currIndex - delta
+          : prevIndex;
 
-                  style.order = styles.push(style) as any;
-                }
+        const currOrderedCount = positiveOrZero(
+          (isCycledGoPrevious ? cycledPrevIndex : fakeIndex) -
+            maxNonOrderedIndex
+        );
 
-                requestAnimationFrame(() => {
-                  handleTransition(transition!, realIndex + delta, resolve);
-                });
-              });
-            } else {
-              handleTransition(transition, realIndex + delta, () => {
-                translate(realIndex - delta);
+        const beforeTransitionOffset =
+          cycledPrevIndex +
+          (isLazy && Math.abs(delta) + lazy + viewOffset < itemsCount
+            ? positiveOrZero(
+                Math.max(
+                  cycledPrevIndex + lazy,
+                  isCycledGoPrevious ? currIndex : fakeIndex
+                ) - maxNonOrderedIndex
+              ) -
+              positiveOrZero(
+                Math.min(
+                  cycledPrevIndex - lazy,
+                  isCycledGoPrevious ? currIndex : fakeIndex
+                )
+              )
+            : 0) -
+          Math.max(prevOrderedCount, currOrderedCount);
 
-                removeOrder(styles.length + delta);
+        const isNextFrameNeeded =
+          beforeTransitionOffset != realIndex ||
+          currOrderedCount != prevOrderedCount;
 
-                resolve();
-              });
-            }
-          } else if (styles.length) {
-            handleTransition(transition, realIndex + delta, () => {
-              translate(currIndex);
-
-              removeOrder(0);
-
-              resolve();
-            });
-          } else {
-            handleTransition(transition, currIndex, resolve);
+        const runTransition = () => {
+          if (isLazy && !isNextFrameNeeded) {
+            setLazyRenderIndexes([prevIndex, fakeIndex]);
           }
-        } else {
-          requestAnimationFrame(() => {
-            if (delta > 0) {
-              const end = ((fakeIndex + viewOffset) % l) + 1;
 
-              for (let i = styles.length; i < end; i++) {
+          handleTransition(transition!, beforeTransitionOffset + delta, () => {
+            const orderOffset = positiveOrZero(currIndex - maxNonOrderedIndex);
+
+            const afterTransitionOffset =
+              (isLazy && currIndex > lazy
+                ? lazy + positiveOrZero(currIndex + lazy - maxNonOrderedIndex)
+                : currIndex) - orderOffset;
+
+            const removeIndex = isCycledGoPrevious
+              ? orderOffset
+              : fakeIndex >= itemsCount
+              ? 0
+              : currOrderedCount < prevOrderedCount
+              ? currOrderedCount
+              : -1;
+
+            if (removeIndex >= 0) {
+              removeOrder(removeIndex);
+            }
+
+            if (realIndex != afterTransitionOffset) {
+              translate(afterTransitionOffset);
+            }
+
+            if (isLazy) {
+              setLazyRenderIndexes([currIndex, currIndex]);
+            }
+
+            resolve();
+          });
+        };
+
+        if (isNextFrameNeeded) {
+          requestAnimationFrame(() => {
+            if (isLazy) {
+              setLazyRenderIndexes([prevIndex, fakeIndex]);
+            }
+
+            if (currOrderedCount > prevOrderedCount) {
+              for (let i = prevOrderedCount; i < currOrderedCount; i++) {
                 const style = children[i].style;
 
                 style.order = styles.push(style) as any;
               }
-
-              translate(prevIndex - end);
-            } else {
-              for (let i = l - 1; i >= currIndex; i--) {
-                const style = children[i].style;
-
-                style.order = -styles.push(style) as any;
-              }
-
-              translate(prevIndex + styles.length);
             }
 
-            requestAnimationFrame(() => {
-              handleTransition(transition!, realIndex + delta, () => {
-                removeOrder(0);
+            translate(beforeTransitionOffset);
 
-                if (delta < 0 && viewOffset && currIndex + viewOffset >= l) {
-                  const end = ((currIndex + viewOffset) % l) + 1;
-
-                  translate(currIndex - end);
-
-                  for (let i = 0; i < end; i++) {
-                    const style = children[i].style;
-
-                    style.order = styles.push(style) as any;
-                  }
-                } else {
-                  translate(currIndex);
-                }
-
-                resolve();
-              });
-            });
+            requestAnimationFrame(runTransition);
           });
+        } else {
+          runTransition();
         }
       } else {
         requestAnimationFrame(() => {
@@ -597,19 +676,6 @@ const Carousel = forwardRef<
           : dist2;
       }, transition);
 
-    // } else {
-    //   const goTo: TCarouselContext['goTo'] = (index) => {
-    //     obj.currIndex = currIndex = clamp(index);
-
-    //     translate(currIndex);
-    //   };
-
-    //   obj.goTo = goTo;
-    //   obj.go = (delta) => {
-    //     goTo(currIndex + delta);
-    //   };
-    // }
-
     goImmediately(currIndex);
 
     setRef(ref, obj);
@@ -626,9 +692,7 @@ const Carousel = forwardRef<
   return (
     <div className={props.className}>
       <div ref={containerRef}>
-        {enabled
-          ? handleItems(props, prependIndex)
-          : [props.renderItem(props.items[prependIndex], prependIndex)]}
+        {handleItems(props, lazyRenderIndexes[0], lazyRenderIndexes[1])}
       </div>
       {props.children}
     </div>

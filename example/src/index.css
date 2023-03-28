@@ -27,6 +27,7 @@ height: 300px;
 }
 
 .item {
+  width: 30px;
   height: 100%;
       display: flex;
       justify-content: center;
