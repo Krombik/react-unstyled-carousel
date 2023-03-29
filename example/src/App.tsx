@@ -1,7 +1,13 @@
 import { VFC, useRef } from 'react';
-import Carousel from 'react-unstuled-carousel';
+import {
+  Carousel,
+  autoSize,
+  infinity,
+  infinitySwipe,
+  infinityTransition,
+} from 'react-unstuled-carousel';
 
-const items = Array.from({ length: 20 }, (_, index) => index);
+const items = Array.from({ length: 10 }, (_, index) => index);
 
 const TRANSITION = 'transform .3s ease';
 
@@ -15,11 +21,13 @@ const Home: VFC = () => {
             ref={kek}
             className='carousel'
             items={items}
-            infinity
-            autoSize
+            type={infinity}
+            // autoSize={autoSize}
+            swipe={infinitySwipe}
+            transition={infinityTransition}
             // defaultIndex={7}
             viewOffset={3}
-            // lazy={1}
+            lazy={1}
             gap='9px'
             renderItem={(item, index) => (
               <div

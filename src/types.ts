@@ -1,152 +1,91 @@
-import { HandlerName } from './utils/constants';
-type GetLiteral<T extends string> = `get${Capitalize<T>}`;
+import { CSSProperties } from 'react';
 
-/** @internal */
-export type UnGet<T> = T extends `get${infer K}`
-  ? '' extends K
-    ? never
-    : Uncapitalize<K>
-  : never;
+type Falsy = false | undefined | null | 0 | '';
 
-/** @internal */
-export type GetValue<
-  Instance extends Record<GetLiteral<string>, () => any> | {},
-  Key extends UnGet<keyof Instance>
-> = GetLiteral<Key> extends keyof Instance
-  ? Instance[GetLiteral<Key>] extends () => infer K
-    ? NonNullable<K>
-    : never
-  : never;
-
-type SetValue<
-  Instance extends Record<SetLiteral<string>, () => any>,
-  Key extends UnSet<keyof Instance>
-> = SetLiteral<Key> extends keyof Instance
-  ? Instance[SetLiteral<Key>] extends (arg: infer K) => void
-    ? NonNullable<K>
-    : never
-  : never;
-
-type SetLiteral<T extends string> = `set${Capitalize<T>}`;
-
-type UnSet<T> = T extends `set${infer K}`
-  ? '' extends K
-    ? never
-    : Uncapitalize<K>
-  : never;
-
-type _InstanceType<T extends new (...args: any[]) => any> = T extends new (
-  ...args: any
-) => infer R
-  ? R
-  : any;
-
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
-  k: infer I
-) => void
-  ? I
-  : never;
-
-type DeepSearchInstance<
-  Instance,
-  Store,
-  Keys extends string[] = []
-> = Store extends object
-  ? {
-      [Key in keyof Store]: Key extends string
-        ? Key extends 'prototype'
-          ? never
-          : Store[Key] extends { new (...args: any[]): any }
-          ? _InstanceType<Store[Key]> extends Instance
-            ? [...Keys, Key]
-            : never
-          : DeepSearchInstance<Instance, Store[Key], [...Keys, Key]>
-        : never;
-    }
-  : never;
-
-type ExtractPathFromDeepMemberSearch<T> = T extends object
-  ? [Extract<T[keyof T], string[]>] extends [never]
-    ? ExtractPathFromDeepMemberSearch<UnionToIntersection<T[keyof T]>>
-    : Extract<T[keyof T], string[]>
-  : never;
-
-/** @internal */
-export type PathTo<Instance> = ExtractPathFromDeepMemberSearch<
-  DeepSearchInstance<Instance, typeof google.maps>
->;
-
-/** @internal */
-export type ClassType<T> = T extends _InstanceType<infer K> ? K : never;
-
-/** @internal */
-export type TypicalInstance = google.maps.MVCObject & {
-  setOptions(options: any): void;
+export type SwipeModule = {
+  (self: InnerSelf, isVertical?: boolean): () => void;
+};
+export type TransitionModule = {
+  (
+    this: InnerSelf,
+    delta: number,
+    transition: string,
+    resolve: () => void
+  ): void;
+};
+export type TypeModule = {
+  (self: InnerSelf, ctx: CarouselMethods): void;
+};
+export type AutoSizeModule = {
+  (
+    container: HTMLDivElement,
+    viewOffset: number,
+    isVertical?: boolean
+  ): () => void;
 };
 
-type OptionsOf<Instance extends TypicalInstance> = NonNullable<
-  Parameters<Instance['setOptions']>[0]
->;
-
-/** @internal */
-export type PossibleHandlers = Partial<Record<HandlerName, [arg?: any]>>;
-
-/** @internal */
-export type PossibleProps<Instance> = Partial<
-  Record<UnGet<keyof Instance>, true>
->;
-
-/** @internal */
-export type CombineProps<
-  Instance extends TypicalInstance,
-  H extends PossibleHandlers,
-  P extends PossibleProps<Instance>
-> = Partial<
-  HandlersMap<Instance, H> &
-    PropsMap<Instance, P> & {
-      defaultOptions: OptionsOf<Instance>;
-    }
->;
-
-type HandlersMap<Instance, T extends Record<string, [arg?: any]>> = {
-  [Key in keyof T]: { (this: Instance, ...args: T[Key]): void };
-};
-
-type PropsMap<
-  Instance extends Record<string, any>,
-  T extends Record<string, any>
-> = {
-  [Key in keyof T]: SetValue<
-    Instance,
-    Key extends UnSet<keyof Instance> ? Key : never
-  >;
-};
-
-/** @internal */
-export type DragEventName = 'onDrag' | 'onDragEnd' | 'onDragStart';
-
-/** @internal */
-export type PolyHandlers = Omit<
-  MouseHandlers<google.maps.PolyMouseEvent>,
-  DragEventName
-> &
-  Pick<MouseHandlers, DragEventName>;
-
-/** @internal */
-export type MouseHandlers<Event = google.maps.MapMouseEvent> = {
-  onClick: [e: Event];
-  onContextMenu: [e: Event];
-  onDoubleClick: [e: Event];
-  onDrag: [e: Event];
-  onDragEnd: [e: Event];
-  onDragStart: [e: Event];
-  onMouseDown: [e: Event];
-  onMouseMove: [e: Event];
-  onMouseOut: [e: Event];
-  onMouseOver: [e: Event];
-  onMouseUp: [e: Event];
+export type CarouselProps<T = any> = {
+  items: T[];
+  renderItem: (value: T, index: number) => JSX.Element;
+  className?: string;
+  style?: CSSProperties;
+  type: TypeModule;
+  transition?: TransitionModule | Falsy;
+  swipe?: SwipeModule | Falsy;
+  autoSize?: AutoSizeModule | Falsy;
+  lazy?: number;
+  name?: string;
   /**
-   * @deprecated Use the {@link MouseHandlers.onContextMenu onContextMenu} instead in order to support usage patterns like control-click on macOS
+   * @default 0
    */
-  onRightClick: [e: Event];
+  defaultIndex?: number;
+  /**
+   * if not provided - {@link CarouselProps.defaultIndex defaultIndex}
+   */
+  defaultActiveIndex?: number | null;
+  vertical?: boolean;
+  /**
+   * Number of additional slides to display in the carousel view.
+   * - If {@link Props.middle middle} is `true`, additional slides will be showed after the current slide, overwise additional slides will be showed before and after the current
+   */
+  viewOffset?: number;
+  /**
+   * @default "start"
+   */
+  translateAfter?: 'start' | 'middle' | 'end';
+  gap?: string;
+  swipeEndTransition?: string;
+};
+
+/** @internal */
+export type InnerSelf = {
+  _jumpTo(index: number): void;
+  _translate(index: number, offset?: number): void;
+  _removeOrder(from: number): void;
+  _addOrder(start: number, end: number): void;
+  _handleTransition(
+    transition: string,
+    index: number,
+    callback: () => void
+  ): void;
+  _setLazyRenderIndexes(value: [number, number]): void;
+  _go: TransitionModule | Falsy;
+  _translateAxis: string;
+  _completion?: Promise<void>;
+  _isFree: boolean;
+  _isFirst: boolean;
+  _realIndex: number;
+  _currIndex: number;
+  _props: CarouselProps;
+  _container: HTMLDivElement;
+  _styles: CSSStyleDeclaration[];
+};
+
+export type CarouselMethods = {
+  activeIndex: number | null;
+  setActive(index: number | null): void;
+  go(delta: number, transition?: string): Promise<void>;
+  goTo(index: number, transition?: string): Promise<void>;
+  parent: CarouselMethods | null;
+  children: Partial<Record<string, CarouselMethods>>;
 };
