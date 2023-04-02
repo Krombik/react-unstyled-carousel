@@ -15,7 +15,7 @@ const run = async (outDir: string) => {
     outDir,
     minify: false,
     entry: [
-      'src/index.tsx',
+      'src/index.ts',
       // `src/${Folder.COMPONENTS}/*/*.(ts|tsx)`,
       // `src/${Folder.HOOKS}/!(${Folder.SERVICE})/*.ts`,
       // `src/${Folder.HOOKS}/${Folder.SERVICE}/*/*.ts`,
@@ -33,7 +33,7 @@ const run = async (outDir: string) => {
 
   if (
     ts
-      .createProgram(['src/index.tsx'], {
+      .createProgram(['src/index.ts'], {
         emitDeclarationOnly: true,
         declaration: true,
         stripInternal: true,

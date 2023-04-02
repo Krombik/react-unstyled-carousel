@@ -5,11 +5,15 @@ import {
   infinity,
   infinitySwipe,
   infinityTransition,
+  ease,
+  cubicBezier,
 } from 'react-unstuled-carousel';
 
 const items = Array.from({ length: 10 }, (_, index) => index);
 
-const TRANSITION = 'transform .3s ease';
+const TRANSITION = ease;
+
+const DURATION = 300;
 
 const Home: VFC = () => {
   const kek = useRef<any>(null);
@@ -27,7 +31,7 @@ const Home: VFC = () => {
             transition={infinityTransition}
             // defaultIndex={7}
             viewOffset={3}
-            lazy={1}
+            // lazy={1}
             gap='9px'
             renderItem={(item, index) => (
               <div
@@ -43,42 +47,42 @@ const Home: VFC = () => {
       </div>
       <button
         onClick={() => {
-          kek.current!.go(-2, TRANSITION);
+          kek.current!.go(-2, TRANSITION, DURATION);
         }}
       >
         prev2
       </button>
       <button
         onClick={() => {
-          kek.current!.go(-1, TRANSITION);
+          kek.current!.go(-1, TRANSITION, DURATION);
         }}
       >
         prev
       </button>
       <button
         onClick={() => {
-          kek.current!.go(1, TRANSITION);
+          kek.current!.go(1, TRANSITION, DURATION);
         }}
       >
         next
       </button>
       <button
         onClick={() => {
-          kek.current!.go(2, TRANSITION);
+          kek.current!.go(2, TRANSITION, DURATION);
         }}
       >
         next2
       </button>
       <button
         onClick={() => {
-          kek.current!.go(4, TRANSITION);
+          kek.current!.go(4, TRANSITION, DURATION);
         }}
       >
         next4
       </button>
       <button
         onClick={() => {
-          kek.current!.go(5, TRANSITION);
+          kek.current!.go(5, TRANSITION, DURATION);
         }}
       >
         next5
@@ -88,7 +92,7 @@ const Home: VFC = () => {
         <button
           key={item}
           onClick={() => {
-            kek.current!.goTo(item, TRANSITION);
+            kek.current!.goTo(item, TRANSITION, DURATION);
           }}
         >
           {item}

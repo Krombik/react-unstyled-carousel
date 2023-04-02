@@ -9,7 +9,8 @@ export type TransitionModule = {
   (
     this: InnerSelf,
     delta: number,
-    transition: string,
+    timingFunction: TimingFunction,
+    duration: number,
     resolve: () => void
   ): void;
 };
@@ -57,6 +58,8 @@ export type CarouselProps<T = any> = {
   swipeEndTransition?: string;
 };
 
+export type UintArray = Uint8Array | Uint16Array | Uint32Array;
+
 /** @internal */
 export type InnerSelf = {
   _jumpTo(index: number): void;
@@ -69,23 +72,37 @@ export type InnerSelf = {
     callback: () => void
   ): void;
   _setLazyRenderIndexes(value: [number, number]): void;
+  _increase(): void;
   _go: TransitionModule | Falsy;
   _translateAxis: string;
   _completion?: Promise<void>;
   _isFree: boolean;
-  _isFirst: boolean;
   _realIndex: number;
   _currIndex: number;
   _props: CarouselProps;
   _container: HTMLDivElement;
   _styles: CSSStyleDeclaration[];
+  _indexes: UintArray;
+  _length: number;
 };
 
 export type CarouselMethods = {
   activeIndex: number | null;
   setActive(index: number | null): void;
-  go(delta: number, transition?: string): Promise<void>;
-  goTo(index: number, transition?: string): Promise<void>;
+  go(delta: number): Promise<void>;
+  go(
+    delta: number,
+    timingFunction: TimingFunction,
+    duration: number
+  ): Promise<void>;
+  goTo(index: number): Promise<void>;
+  goTo(
+    index: number,
+    timingFunction: TimingFunction,
+    duration: number
+  ): Promise<void>;
   parent: CarouselMethods | null;
   children: Partial<Record<string, CarouselMethods>>;
 };
+
+export type TimingFunction = (progress: number) => number;

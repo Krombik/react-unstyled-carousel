@@ -1,4 +1,4 @@
-import { InnerSelf, CarouselMethods } from '../types';
+import { InnerSelf, CarouselMethods, TimingFunction } from '../types';
 import { DEFAULT_FAST_TRANSITION } from './constants';
 
 /** @internal */
@@ -11,7 +11,8 @@ const handleGo = (
   const go = async (
     valueToDelta: (value: number) => number,
     value: number,
-    transition?: string
+    timingFunction?: TimingFunction,
+    duration?: number
   ) => {
     self._isFree = false;
 
@@ -19,14 +20,10 @@ const handleGo = (
 
     const prevPromise = self._completion;
 
-    const { style } = self._container;
-
     const promise = new Promise<void>((_resolve) => {
       resolve = () => {
         requestAnimationFrame(() => {
           if (promise == self._completion) {
-            self._isFirst = true;
-
             delete self._completion;
 
             self._isFree = true;
@@ -40,15 +37,9 @@ const handleGo = (
     self._completion = promise;
 
     if (prevPromise) {
-      if (self._isFirst && style.transition) {
-        style.transition = DEFAULT_FAST_TRANSITION;
+      self._increase();
 
-        self._translate(self._realIndex, -0.001);
-
-        self._isFirst = false;
-      }
-
-      transition &&= DEFAULT_FAST_TRANSITION;
+      duration = 100;
 
       await prevPromise;
     }
@@ -57,8 +48,42 @@ const handleGo = (
 
     if (!delta) {
       resolve();
-    } else if (transition && self._go) {
-      self._go(delta, transition, resolve);
+    } else if (timingFunction) {
+      let start: number;
+
+      let currTime: number;
+
+      let progress = 0;
+
+      const prevIndex = self._currIndex;
+
+      self._increase = () => {
+        duration = 100;
+
+        start = currTime - progress * duration;
+      };
+
+      const tick = (time: number) => {
+        currTime = time;
+
+        progress = (time - start) / duration!;
+
+        if (progress < 1) {
+          self._jumpTo(prevIndex + delta * timingFunction(progress));
+
+          requestAnimationFrame(tick);
+        } else {
+          self._jumpTo(prevIndex + delta);
+
+          resolve();
+        }
+      };
+
+      requestAnimationFrame((time) => {
+        currTime = start = time;
+
+        requestAnimationFrame(tick);
+      });
     } else {
       requestAnimationFrame(() => {
         self._jumpTo(self._currIndex + delta);
@@ -70,8 +95,12 @@ const handleGo = (
     return promise;
   };
 
-  ctx.go = (delta, transition) => go(transformGoValue, delta, transition);
-  ctx.goTo = (index, transition) => go(transformGoToValue, index, transition);
+  // @ts-ignore
+  ctx.go = (delta, timingFunction, duration) =>
+    go(transformGoValue, delta, timingFunction, duration);
+  // @ts-ignore
+  ctx.goTo = (index, timingFunction, duration) =>
+    go(transformGoToValue, index, timingFunction, duration);
 };
 
 /** @internal */

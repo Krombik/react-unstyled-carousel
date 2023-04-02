@@ -6,7 +6,7 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
 
   const wrapper = container.parentElement!;
 
-  const children = container.children as HTMLCollectionOf<HTMLElement>;
+  // const children = container.children as HTMLCollectionOf<HTMLElement>;
 
   const handleSwipeListener = <
     K extends Extract<keyof HTMLElementEventMap, 'mousemove' | 'touchmove'>
@@ -35,20 +35,19 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
 
     const viewOffset = props.viewOffset || 0;
 
-    // const lazy = props.lazy;
+    const lazy = props.lazy;
 
     const itemSize = container.children[0][clientProperty] + gap;
 
     const itemsCount = props.items.length;
 
-    const lastItemIndex = itemsCount - 1;
+    // const lastItemIndex = itemsCount - 1;
 
-    const distToStart = currIndex * itemSize;
+    // const distToStart = currIndex * itemSize;
 
-    const distToEnd = (lastItemIndex - currIndex - viewOffset) * itemSize;
+    // const distToEnd = (lastItemIndex - currIndex - viewOffset) * itemSize;
 
-    // const isLazy =
-    //   lazy != undefined && lazy * 2 + 1 + viewOffset < itemsCount;
+    const isLazy = lazy != undefined && lazy * 2 + 1 + viewOffset < itemsCount;
 
     const promise = new Promise<void>((_resolve) => {
       resolve = () => {
@@ -62,6 +61,12 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
       };
     });
 
+    let prevLazyIndex = currIndex;
+
+    const jumpTo = self._jumpTo;
+
+    const setLazyRenderIndexes = self._setLazyRenderIndexes;
+
     const movingListener = (e: HTMLElementEventMap[K]) => {
       cancelAnimationFrame(handle);
 
@@ -71,80 +76,24 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
         self._completion ||= promise;
 
         handle = requestAnimationFrame(() => {
-          const l = self._styles.length;
+          const nextIndex = currIndex - offset / itemSize;
 
-          if (offset > 0) {
-            const dist = distToStart - offset;
+          if (isLazy) {
+            const isGoNext = nextIndex > currIndex + lazy;
 
-            if (dist > 0) {
-              const count = Math.ceil(dist / itemSize - Number.EPSILON);
+            if (isGoNext || nextIndex < currIndex - lazy) {
+              const nextLazyIndex =
+                Math[isGoNext ? 'ceil' : 'floor'](nextIndex);
 
-              const index = count - lastItemIndex + viewOffset;
+              if (prevLazyIndex != nextLazyIndex) {
+                prevLazyIndex = nextLazyIndex;
 
-              // if (isLazy) {
-
-              // }
-
-              newCurrIndex = count;
-
-              currRealIndex = count;
-
-              if (index >= 0) {
-                currRealIndex -= index;
-
-                if (index > l) {
-                  self._addOrder(l, index);
-                } else if (index < l) {
-                  self._removeOrder(index);
-                }
-              } else {
-                self._removeOrder(0);
+                setLazyRenderIndexes([currIndex, nextLazyIndex]);
               }
-            } else {
-              const count = Math.floor(Number.EPSILON - dist / itemSize) + 1;
-
-              if (count > l) {
-                const styles = self._styles;
-
-                for (let i = l; i < count; i++) {
-                  const style = children[lastItemIndex - i].style;
-
-                  style.order = -styles.push(style) as any;
-                }
-              } else if (count < l) {
-                self._removeOrder(count);
-              }
-
-              newCurrIndex = itemsCount - count + 1;
-
-              currRealIndex = 1;
-            }
-          } else {
-            const dist = distToEnd + offset;
-
-            if (dist > 0) {
-              currRealIndex = newCurrIndex =
-                lastItemIndex -
-                Math.ceil(dist / itemSize - Number.EPSILON) -
-                viewOffset;
-
-              self._removeOrder(0);
-            } else {
-              const count = Math.floor(Number.EPSILON - dist / itemSize) + 1;
-
-              if (count > l) {
-                self._addOrder(l, count);
-              } else if (count < l) {
-                self._removeOrder(count);
-              }
-
-              currRealIndex = lastItemIndex - viewOffset - 1;
-
-              newCurrIndex = (currRealIndex + count) % itemsCount;
             }
           }
 
-          self._translate(currRealIndex, offset % itemSize);
+          jumpTo(nextIndex);
         });
       }
     };
@@ -156,17 +105,17 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
 
       cancelAnimationFrame(handle);
 
-      const additionalIndex = Math.round((offset % itemSize) / itemSize);
+      // const additionalIndex = Math.round((offset % itemSize) / itemSize);
 
-      self._handleTransition(
-        DEFAULT_FAST_TRANSITION,
-        currRealIndex - additionalIndex,
-        () => {
-          self._jumpTo((newCurrIndex - additionalIndex) % itemsCount);
+      // self._handleTransition(
+      //   DEFAULT_FAST_TRANSITION,
+      //   currRealIndex - additionalIndex,
+      //   () => {
+      //     self._jumpTo(Math.round(currIndex - offset / itemSize));
 
-          resolve();
-        }
-      );
+      //     resolve();
+      //   }
+      // );
     };
 
     container.addEventListener(moveEvent, movingListener);

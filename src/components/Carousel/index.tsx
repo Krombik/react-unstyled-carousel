@@ -14,8 +14,10 @@ import noop from '../../utils/noop';
 import useConst from '../../utils/useConst';
 import CarouselProvider from '../../providers/CarouselProvider';
 import CarouselMethodsContext from '../../context/CarouselMethodsContext';
+import positiveOrZero from '../../utils/positiveOrZero';
 
 const handleItems = (
+  self: InnerSelf,
   props: CarouselProps,
   currLazyRenderIndex: number,
   nextLazyRenderIndex: number
@@ -33,7 +35,11 @@ const handleItems = (
   } else {
     // currLazyRenderIndex = 0;
     // nextLazyRenderIndex = -4;
-    console.log(currLazyRenderIndex, nextLazyRenderIndex);
+    // console.log(currLazyRenderIndex, nextLazyRenderIndex);
+    let index = 0;
+
+    const indexes = self._indexes;
+
     const start = Math.min(currLazyRenderIndex - lazy, nextLazyRenderIndex);
 
     const end =
@@ -41,22 +47,26 @@ const handleItems = (
       viewOffset +
       1;
 
-    console.log(start, end);
+    // console.log(start, end);
 
     const overLeft = end - l;
 
     const clumpedEnd = Math.min(end, l);
 
     if (overLeft > 0) {
-      console.log(overLeft, start);
+      // console.log(overLeft, start);
 
       for (let i = 0; i < overLeft; i++) {
         arr.push(renderItem(items[i], i));
+
+        indexes[index++] = i;
       }
     }
 
-    for (let i = Math.max(start, arr.length); i < clumpedEnd; i++) {
+    for (let i = Math.max(start, index); i < clumpedEnd; i++) {
       arr.push(renderItem(items[i], i));
+
+      indexes[index++] = i;
     }
 
     if (start < 0) {
@@ -64,10 +74,12 @@ const handleItems = (
 
       for (let i = Math.max(overRight, clumpedEnd); i < l; i++) {
         arr.push(renderItem(items[i], i));
+
+        indexes[index++] = i;
       }
     }
 
-    console.log(arr);
+    self._length = index;
   }
 
   return arr;
@@ -105,7 +117,21 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
         children: {},
       } as CarouselMethods;
 
-      const self = { _currIndex: props.defaultIndex || 0 } as InnerSelf;
+      const self = {
+        _currIndex: props.defaultIndex || 0,
+        _isFree: true,
+        _isFirst: true,
+      } as InnerSelf;
+
+      const itemsCount = props.items.length;
+
+      self._indexes = new (
+        itemsCount < 256
+          ? Uint8Array
+          : itemsCount < 65536
+          ? Uint16Array
+          : Uint32Array
+      )(itemsCount);
 
       return [
         self,
@@ -220,7 +246,12 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
       <>
         <div className={props.className} style={props.style}>
           <div ref={data[1]}>
-            {handleItems(props, lazyRenderIndexes[0], lazyRenderIndexes[1])}
+            {handleItems(
+              self,
+              props,
+              lazyRenderIndexes[0],
+              lazyRenderIndexes[1]
+            )}
           </div>
         </div>
         {children && (

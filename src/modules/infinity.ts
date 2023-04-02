@@ -1,4 +1,4 @@
-import { TypeModule } from '../types';
+import { TypeModule, UintArray } from '../types';
 import handleGo from '../utils/handleGo';
 import positiveOrZero from '../utils/positiveOrZero';
 
@@ -8,15 +8,11 @@ const infinity: TypeModule = (self, ctx) => {
   const children = self._container.children as HTMLCollectionOf<HTMLElement>;
 
   const removeOrder = (from: number) => {
-    const l = styles.length;
-
-    if (l) {
-      for (let i = from; i < l; i++) {
-        styles[i].removeProperty('order');
-      }
-
-      styles.length = from;
+    for (let i = from; i < styles.length; i++) {
+      styles[i].removeProperty('order');
     }
+
+    styles.length = from;
   };
 
   const addOrder = (start: number, end: number) => {
@@ -27,6 +23,27 @@ const infinity: TypeModule = (self, ctx) => {
     }
   };
 
+  const binarySearch = (arr: UintArray, value: number, end: number) => {
+    let start = 0;
+
+    while (start <= end) {
+      const mid = Math.floor((start + end) / 2);
+
+      const item = arr[mid];
+
+      if (item == value) {
+        return mid;
+      } else if (item < value) {
+        start = mid + 1;
+      } else {
+        end = mid - 1;
+      }
+    }
+
+    // If the value is not found, return -1
+    return -1;
+  };
+
   self._styles = styles;
 
   self._removeOrder = removeOrder;
@@ -34,25 +51,42 @@ const infinity: TypeModule = (self, ctx) => {
   self._addOrder = addOrder;
 
   self._jumpTo = (index: number) => {
-    const { items, viewOffset = 0 } = self._props;
+    const props = self._props;
 
-    const l = items.length;
+    const l = props.items.length;
 
-    const maxLength = l - viewOffset;
+    const maxLength = l - (props.viewOffset || 0) - 1;
 
     const currIndex = ((index % l) + l) % l;
 
     self._currIndex = currIndex;
 
-    removeOrder(0);
+    if (currIndex > maxLength) {
+      const currEnd = styles.length;
 
-    if (currIndex < maxLength) {
-      self._translate(currIndex);
-    } else {
-      addOrder(0, l - currIndex);
+      const end = Math.ceil(currIndex - Number.EPSILON) - maxLength;
 
-      self._translate(maxLength - 1);
+      if (currEnd < end) {
+        for (let i = currEnd; i < end; i++) {
+          const { style } = children[i];
+
+          style.order = styles.push(style) as any;
+        }
+      } else if (currEnd > end) {
+        removeOrder(end);
+      }
+    } else if (styles.length) {
+      removeOrder(0);
     }
+
+    const kek = Math.floor(currIndex);
+
+    self._translate(
+      (props.lazy == undefined
+        ? currIndex
+        : binarySearch(self._indexes, kek, self._length) + currIndex - kek) -
+        styles.length
+    );
   };
 
   handleGo(
