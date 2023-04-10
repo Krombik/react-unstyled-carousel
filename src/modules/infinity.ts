@@ -1,4 +1,4 @@
-import { TypeModule, UintArray } from '../types';
+import { TypeModule } from '../types';
 import handleGo from '../utils/handleGo';
 import positiveOrZero from '../utils/positiveOrZero';
 
@@ -15,41 +15,6 @@ const infinity: TypeModule = (self, ctx) => {
     styles.length = from;
   };
 
-  const addOrder = (start: number, end: number) => {
-    for (let i = start; i < end; i++) {
-      const { style } = children[i];
-
-      style.order = styles.push(style) as any;
-    }
-  };
-
-  const binarySearch = (arr: UintArray, value: number, end: number) => {
-    let start = 0;
-
-    while (start <= end) {
-      const mid = Math.floor((start + end) / 2);
-
-      const item = arr[mid];
-
-      if (item == value) {
-        return mid;
-      } else if (item < value) {
-        start = mid + 1;
-      } else {
-        end = mid - 1;
-      }
-    }
-
-    // If the value is not found, return -1
-    return -1;
-  };
-
-  self._styles = styles;
-
-  self._removeOrder = removeOrder;
-
-  self._addOrder = addOrder;
-
   self._jumpTo = (index: number) => {
     const props = self._props;
 
@@ -59,11 +24,11 @@ const infinity: TypeModule = (self, ctx) => {
 
     const currIndex = ((index % l) + l) % l;
 
+    const currEnd = styles.length;
+
     self._currIndex = currIndex;
 
     if (currIndex > maxLength) {
-      const currEnd = styles.length;
-
       const end = Math.ceil(currIndex - Number.EPSILON) - maxLength;
 
       if (currEnd < end) {
@@ -75,18 +40,11 @@ const infinity: TypeModule = (self, ctx) => {
       } else if (currEnd > end) {
         removeOrder(end);
       }
-    } else if (styles.length) {
+    } else if (currEnd) {
       removeOrder(0);
     }
 
-    const kek = Math.floor(currIndex);
-
-    self._translate(
-      (props.lazy == undefined
-        ? currIndex
-        : binarySearch(self._indexes, kek, self._length) + currIndex - kek) -
-        styles.length
-    );
+    self._translate(self._handleIndex(currIndex) - styles.length);
   };
 
   handleGo(

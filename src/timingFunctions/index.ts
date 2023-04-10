@@ -1,6 +1,7 @@
 import { TimingFunction } from '../types';
+import identity from '../utils/identity';
 
-export const linear: TimingFunction = (progress) => progress;
+export const linear: TimingFunction = identity;
 
 export const cubicBezier = (
   x1: number,

@@ -6,10 +6,11 @@ import {
   infinitySwipe,
   infinityTransition,
   ease,
+  lazy,
   cubicBezier,
 } from 'react-unstuled-carousel';
 
-const items = Array.from({ length: 10 }, (_, index) => index);
+const items = Array.from({ length: 20 }, (_, index) => index);
 
 const TRANSITION = ease;
 
@@ -30,7 +31,10 @@ const Home: VFC = () => {
             swipe={infinitySwipe}
             transition={infinityTransition}
             // defaultIndex={7}
+            keepMounted={10}
             viewOffset={3}
+            lazy={lazy}
+            lazyOffset={0}
             // lazy={1}
             gap='9px'
             renderItem={(item, index) => (

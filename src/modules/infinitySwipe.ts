@@ -1,5 +1,4 @@
 import { SwipeModule } from '../types';
-import { DEFAULT_FAST_TRANSITION } from '../utils/constants';
 
 const infinitySwipe: SwipeModule = (self, isVertical) => {
   const container = self._container;
@@ -23,31 +22,11 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
 
     const currIndex = self._currIndex;
 
-    let newCurrIndex = currIndex;
-
-    let currRealIndex = self._realIndex;
-
     const clientProperty = isVertical ? 'clientHeight' : 'clientWidth';
 
     const gap = container[clientProperty] - wrapper[clientProperty];
 
-    const props = self._props;
-
-    const viewOffset = props.viewOffset || 0;
-
-    const lazy = props.lazy;
-
     const itemSize = container.children[0][clientProperty] + gap;
-
-    const itemsCount = props.items.length;
-
-    // const lastItemIndex = itemsCount - 1;
-
-    // const distToStart = currIndex * itemSize;
-
-    // const distToEnd = (lastItemIndex - currIndex - viewOffset) * itemSize;
-
-    const isLazy = lazy != undefined && lazy * 2 + 1 + viewOffset < itemsCount;
 
     const promise = new Promise<void>((_resolve) => {
       resolve = () => {
@@ -61,11 +40,7 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
       };
     });
 
-    let prevLazyIndex = currIndex;
-
     const jumpTo = self._jumpTo;
-
-    const setLazyRenderIndexes = self._setLazyRenderIndexes;
 
     const movingListener = (e: HTMLElementEventMap[K]) => {
       cancelAnimationFrame(handle);
@@ -78,20 +53,7 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
         handle = requestAnimationFrame(() => {
           const nextIndex = currIndex - offset / itemSize;
 
-          if (isLazy) {
-            const isGoNext = nextIndex > currIndex + lazy;
-
-            if (isGoNext || nextIndex < currIndex - lazy) {
-              const nextLazyIndex =
-                Math[isGoNext ? 'ceil' : 'floor'](nextIndex);
-
-              if (prevLazyIndex != nextLazyIndex) {
-                prevLazyIndex = nextLazyIndex;
-
-                setLazyRenderIndexes([currIndex, nextLazyIndex]);
-              }
-            }
-          }
+          self._lazy(currIndex, nextIndex);
 
           jumpTo(nextIndex);
         });
@@ -105,17 +67,7 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
 
       cancelAnimationFrame(handle);
 
-      // const additionalIndex = Math.round((offset % itemSize) / itemSize);
-
-      // self._handleTransition(
-      //   DEFAULT_FAST_TRANSITION,
-      //   currRealIndex - additionalIndex,
-      //   () => {
-      //     self._jumpTo(Math.round(currIndex - offset / itemSize));
-
-      //     resolve();
-      //   }
-      // );
+      self._cleanup();
     };
 
     container.addEventListener(moveEvent, movingListener);

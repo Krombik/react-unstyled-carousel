@@ -1,5 +1,6 @@
-import { InnerSelf, CarouselMethods, TimingFunction } from '../types';
-import { DEFAULT_FAST_TRANSITION } from './constants';
+import { InnerSelf, CarouselMethods, TimingFunction, Duration } from '../types';
+import isFunction from './isFunction';
+import noop from './noop';
 
 /** @internal */
 const handleGo = (
@@ -12,7 +13,7 @@ const handleGo = (
     valueToDelta: (value: number) => number,
     value: number,
     timingFunction?: TimingFunction,
-    duration?: number
+    duration?: Duration
   ) => {
     self._isFree = false;
 
@@ -37,7 +38,7 @@ const handleGo = (
     self._completion = promise;
 
     if (prevPromise) {
-      self._increase();
+      self._speedup();
 
       duration = 100;
 
@@ -46,9 +47,7 @@ const handleGo = (
 
     const delta = valueToDelta(value);
 
-    if (!delta) {
-      resolve();
-    } else if (timingFunction) {
+    if (delta) {
       let start: number;
 
       let currTime: number;
@@ -57,7 +56,19 @@ const handleGo = (
 
       const prevIndex = self._currIndex;
 
-      self._increase = () => {
+      const props = self._props;
+
+      timingFunction ||= props.timingFunction!;
+
+      duration ||= props.transitionDuration!;
+
+      if (isFunction(duration)) {
+        duration = duration(Math.abs(delta));
+      }
+
+      self._speedup = () => {
+        self._speedup = noop;
+
         duration = 100;
 
         start = currTime - progress * duration;
@@ -66,10 +77,10 @@ const handleGo = (
       const tick = (time: number) => {
         currTime = time;
 
-        progress = (time - start) / duration!;
+        progress = (time - start) / (duration as number);
 
         if (progress < 1) {
-          self._jumpTo(prevIndex + delta * timingFunction(progress));
+          self._jumpTo(prevIndex + delta * timingFunction!(progress));
 
           requestAnimationFrame(tick);
         } else {
@@ -85,22 +96,15 @@ const handleGo = (
         requestAnimationFrame(tick);
       });
     } else {
-      requestAnimationFrame(() => {
-        self._jumpTo(self._currIndex + delta);
-
-        resolve();
-      });
+      resolve();
     }
 
     return promise;
   };
 
-  // @ts-ignore
-  ctx.go = (delta, timingFunction, duration) =>
-    go(transformGoValue, delta, timingFunction, duration);
-  // @ts-ignore
-  ctx.goTo = (index, timingFunction, duration) =>
-    go(transformGoToValue, index, timingFunction, duration);
+  ctx.go = go.bind(null, transformGoValue);
+
+  ctx.goTo = go.bind(null, transformGoToValue);
 };
 
 /** @internal */
