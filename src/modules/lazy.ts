@@ -95,79 +95,52 @@ const lazy: LazyModule = (self) => {
 
     const { keepMounted = 0, lazyOffset = 0, viewOffset = 0 } = self._props;
 
-    const itemsRendered = end - start;
-
     const maxItems = Math.max(
       keepMounted,
       lazyOffset * 2 + viewOffset + 1 + Math.ceil(currIndex - (currIndex | 0))
     );
 
-    if (itemsRendered > maxItems) {
-      const itemsToRemove = itemsRendered - maxItems;
-
+    if (end - start > maxItems) {
       if (lastNextIndex > prevIndex) {
-        const endIndex = Math.ceil(currIndex) + lazyOffset + viewOffset;
-
-        if (endIndex < maxItems) {
-          const item = itemsCount + endIndex - maxItems + 2;
-
-          let left = start;
-          let right = end;
-
-          while (left < right) {
-            const mid = (left + right) >> 1;
-
-            if (indexes[mid] < item) {
-              left = mid + 1;
-            } else {
-              right = mid;
-            }
-          }
-
-          if (right != end) {
-            indexes.copyWithin(
-              binarySearch(indexes, endIndex + 1, start, end) + 1,
-              right,
-              end
-            );
-          }
-
-          end = maxItems + start;
-        } else {
-          if (endIndex < itemsCount) {
-            const currentEnd =
-              binarySearch(indexes, endIndex + 1, start, end) + 1;
-
-            if (currentEnd != end) {
-              start += currentEnd - end;
-
-              end = currentEnd;
-            }
-          } else {
-            indexes.copyWithin(
-              start + itemsToRemove,
-              start,
-              start + endIndex - itemsCount + 1
-            );
-          }
-
-          start += itemsToRemove;
-        }
-      } else {
-        const startIndex = (currIndex | 0) - lazyOffset;
-
-        if (startIndex < 0) {
-          indexes.copyWithin(
-            end - itemsToRemove + startIndex,
-            end + startIndex,
+        const endIndex =
+          binarySearch(
+            indexes,
+            ((Math.ceil(currIndex) + lazyOffset + viewOffset) % itemsCount) + 1,
+            start,
             end
-          );
+          ) + 1;
+
+        const overlap = endIndex - maxItems - start;
+
+        if (overlap < 0) {
+          indexes.copyWithin(endIndex, end + overlap, end);
+        } else {
+          if (endIndex != end) {
+            start += endIndex - end;
+          }
+
+          start += overlap;
         }
 
-        end -= itemsToRemove;
-      }
+        end = start + maxItems;
+      } else {
+        const realIndex =
+          ((currIndex | 0) - lazyOffset + itemsCount) % itemsCount;
 
-      console.log(indexes, start, end);
+        const startIndex = binarySearch(indexes, realIndex + 1, start, end);
+
+        if (realIndex + maxItems > itemsCount) {
+          const nextStart = end - maxItems;
+
+          indexes.copyWithin(nextStart, start, startIndex - nextStart);
+
+          start = nextStart;
+        } else {
+          start = startIndex;
+
+          end = startIndex + maxItems;
+        }
+      }
 
       self._jumpTo(currIndex);
 
