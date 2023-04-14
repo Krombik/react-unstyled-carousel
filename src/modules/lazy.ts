@@ -1,5 +1,4 @@
 import { LazyModule } from '../types';
-import binarySearch from '../utils/binarySearch';
 
 const lazy: LazyModule = (self) => {
   const props = self._props;
@@ -28,49 +27,74 @@ const lazy: LazyModule = (self) => {
       : Uint32Array
   )(itemsCount);
 
-  const add = (from: number, to: number) => {
-    const prevEnd = end;
+  const binarySearch = (value: number, start: number, end: number) => {
+    value++;
 
-    let currStart = start;
+    while (start < end) {
+      const mid = (start + end) >> 1;
 
-    while (from < to) {
-      const index = binarySearch(indexes, ++from, currStart, prevEnd);
+      const item = indexes[mid];
 
-      if (index < 0) {
-        indexes[start ? --start : end++] = from;
+      if (item < value) {
+        start = mid + 1;
+      } else if (item > value) {
+        end = mid;
       } else {
-        currStart = index;
+        return mid;
+      }
+    }
+
+    return -1;
+  };
+
+  const add = (
+    from: number,
+    to: number,
+    prevStart: number,
+    prevEnd: number
+  ) => {
+    while (from < to) {
+      if (binarySearch(from++, prevStart, prevEnd) < 0) {
+        indexes[start ? --start : end++] = from;
       }
     }
   };
 
   const handleLazy = (from: number, to: number) => {
-    prevFrom = from;
+    if (from != prevFrom || to != prevTo) {
+      prevFrom = from;
 
-    prevTo = to;
+      prevTo = to;
 
-    if (from < 0) {
-      const end = itemsCount + from;
+      const prevStart = start;
 
-      if (end < to) {
-        add(0, itemsCount);
+      const prevEnd = end;
+
+      if (from < 0) {
+        const end = itemsCount + from;
+
+        if (end < to) {
+          add(0, itemsCount, prevStart, prevEnd);
+        } else {
+          add(0, to, prevStart, prevEnd);
+
+          add(end, itemsCount, prevStart, prevEnd);
+        }
+      } else if (to > itemsCount) {
+        const start = to - itemsCount;
+
+        if (start < from) {
+          add(0, start, prevStart, prevEnd);
+
+          add(from, itemsCount, prevStart, prevEnd);
+        } else {
+          add(0, itemsCount, prevStart, prevEnd);
+        }
       } else {
-        add(0, to);
-
-        add(end, itemsCount);
+        add(from, to, prevStart, prevEnd);
       }
-    } else if (to > itemsCount) {
-      const start = to - itemsCount;
 
-      if (start < from) {
-        add(0, start);
-
-        add(from, itemsCount);
-      } else {
-        add(0, itemsCount);
-      }
-    } else {
-      add(from, to);
+      return end != prevEnd || prevStart != start;
     }
   };
 
@@ -83,10 +107,7 @@ const lazy: LazyModule = (self) => {
     const flooredIndex = currIndex | 0;
 
     return (
-      binarySearch(indexes, flooredIndex + 1, start, end) -
-      start +
-      currIndex -
-      flooredIndex
+      binarySearch(flooredIndex, start, end) - start + currIndex - flooredIndex
     );
   };
 
@@ -104,8 +125,7 @@ const lazy: LazyModule = (self) => {
       if (lastNextIndex > prevIndex) {
         const endIndex =
           binarySearch(
-            indexes,
-            ((Math.ceil(currIndex) + lazyOffset + viewOffset) % itemsCount) + 1,
+            (Math.ceil(currIndex) + lazyOffset + viewOffset) % itemsCount,
             start,
             end
           ) + 1;
@@ -114,20 +134,18 @@ const lazy: LazyModule = (self) => {
 
         if (overlap < 0) {
           indexes.copyWithin(endIndex, end + overlap, end);
+
+          end = start + maxItems;
         } else {
-          if (endIndex != end) {
-            start += endIndex - end;
-          }
+          end = endIndex;
 
-          start += overlap;
+          start = endIndex - maxItems;
         }
-
-        end = start + maxItems;
       } else {
         const realIndex =
           ((currIndex | 0) - lazyOffset + itemsCount) % itemsCount;
 
-        const startIndex = binarySearch(indexes, realIndex + 1, start, end);
+        const startIndex = binarySearch(realIndex, start, end);
 
         if (realIndex + maxItems > itemsCount) {
           const nextStart = end - maxItems;
@@ -158,28 +176,17 @@ const lazy: LazyModule = (self) => {
 
       const lazyOffset = props.lazyOffset || 0;
 
-      const from = Math.min(
-        Math.floor(currIndex) - lazyOffset,
-        Math.floor(nextIndex)
-      );
+      if (
+        handleLazy(
+          Math.min((currIndex | 0) - lazyOffset, Math.floor(nextIndex)),
+          Math.max(Math.ceil(currIndex) + lazyOffset, Math.ceil(nextIndex)) +
+            (props.viewOffset || 0) +
+            1
+        )
+      ) {
+        indexes.subarray(start, end).sort();
 
-      const to =
-        Math.max(Math.ceil(currIndex) + lazyOffset, Math.ceil(nextIndex)) +
-        (props.viewOffset || 0) +
-        1;
-
-      if (from != prevFrom || to != prevTo) {
-        const prevStart = start;
-
-        const prevEnd = end;
-
-        handleLazy(from, to);
-
-        if (end != prevEnd || prevStart != start) {
-          indexes.subarray(start, end).sort();
-
-          self._forceRerender({});
-        }
+        self._forceRerender({});
       }
     }
   };
