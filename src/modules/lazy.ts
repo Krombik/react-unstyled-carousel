@@ -121,7 +121,21 @@ const lazy: LazyModule = (self) => {
       lazyOffset * 2 + viewOffset + 1 + Math.ceil(currIndex - (currIndex | 0))
     );
 
+    let isUpdated =
+      lazyOffset &&
+      (start || end < itemsCount) &&
+      handleLazy(
+        (currIndex | 0) - lazyOffset,
+        Math.ceil(currIndex) + lazyOffset + viewOffset + 1
+      );
+
+    if (isUpdated) {
+      indexes.subarray(start, end).sort();
+    }
+
     if (end - start > maxItems) {
+      isUpdated = true;
+
       if (lastNextIndex > prevIndex) {
         const endIndex =
           binarySearch(
@@ -159,7 +173,9 @@ const lazy: LazyModule = (self) => {
           end = startIndex + maxItems;
         }
       }
+    }
 
+    if (isUpdated) {
       self._jumpTo(currIndex);
 
       self._forceRerender({});

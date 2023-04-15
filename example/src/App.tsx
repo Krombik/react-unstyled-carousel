@@ -31,10 +31,10 @@ const Home: VFC = () => {
             swipe={infinitySwipe}
             transition={infinityTransition}
             // defaultIndex={7}
-            keepMounted={10}
-            viewOffset={3}
+            // keepMounted={10}
+            // viewOffset={3}
             lazy={lazy}
-            lazyOffset={0}
+            lazyOffset={1}
             // lazy={1}
             gap='9px'
             renderItem={(item, index) => (
