@@ -15,17 +15,20 @@ import useConst from '../../utils/useConst';
 import CarouselProvider from '../../providers/CarouselProvider';
 import CarouselMethodsContext from '../../context/CarouselMethodsContext';
 import identity from '../../utils/identity';
+import noTransition from '../../utils/noTransition';
 
 const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
   (props, outerRef) => {
     const {
       viewOffset = 0,
+      lazyOffset = 0,
       vertical,
       gap,
       defaultIndex = 0,
       autoSize,
       transition,
       swipe,
+      lazy,
       children,
     } = props;
 
@@ -33,7 +36,7 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
 
     const parentCtx = useContext(CarouselMethodsContext);
 
-    const data = useConst<
+    const [self, ref, ctx] = useConst<
       [self: InnerSelf, ref: RefCallback<HTMLDivElement>, ctx: CarouselMethods]
     >(() => {
       const ctx = {
@@ -46,8 +49,8 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
       } as CarouselMethods;
 
       const self = {
-        _currIndex: props.defaultIndex || 0,
-        _isFree: true,
+        _lazy: noop as any,
+        _currIndex: defaultIndex,
         _handleIndex: identity,
         _forceRerender: t[1],
         _props: props,
@@ -56,7 +59,9 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
         },
       } as InnerSelf;
 
-      props.lazy!(self);
+      if (lazy) {
+        lazy(self);
+      }
 
       return [
         self,
@@ -74,13 +79,15 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
 
             self._translate = translate;
 
-            props.type(self, ctx);
+            props.type(self);
 
             container.parentElement!.style.overflow = 'hidden';
 
             style.display = 'grid';
 
             setRef(outerRef, ctx);
+
+            self._finalize ||= self._jumpTo;
           } else {
             setRef(outerRef, null);
           }
@@ -88,8 +95,6 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
         ctx,
       ];
     });
-
-    const self = data[0];
 
     self._props = props;
 
@@ -100,6 +105,10 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
         vertical ? 'Rows' : 'Columns'
       }` satisfies keyof CSSStyleDeclaration;
 
+      const sizeKey = (
+        vertical ? 'height' : 'width'
+      ) satisfies keyof CSSStyleDeclaration;
+
       const percent = 100 / (1 + viewOffset) + '%';
 
       style.gridAutoFlow = vertical ? 'row' : 'column';
@@ -109,9 +118,7 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
 
         style[key] = `calc(${percent} - ${gap})`;
 
-        style[
-          (vertical ? 'height' : 'width') satisfies keyof CSSStyleDeclaration
-        ] = `calc(100% + ${gap})`;
+        style[sizeKey] = `calc(100% + ${gap})`;
       } else {
         style[key] = percent;
       }
@@ -120,31 +127,50 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
 
       self._jumpTo(self._currIndex);
 
+      self._sizeKey = sizeKey;
+
+      self._clientSizeKey = `client${vertical ? 'Height' : 'Width'}`;
+
+      self._clientAxisKey = `client${vertical ? 'Y' : 'X'}`;
+
       return () => {
         style.removeProperty(`grid-auto-${vertical ? 'rows' : 'columns'}`);
 
-        style.removeProperty(vertical ? 'height' : 'width');
+        style.removeProperty(sizeKey);
       };
     }, [viewOffset, vertical, gap]);
 
-    useLayoutEffect(() => {
-      self._go = transition;
-    }, [transition]);
-
     useLayoutEffect(
-      autoSize ? () => autoSize(self._container, viewOffset, vertical) : noop,
-      [autoSize, viewOffset, vertical]
+      () => {
+        if (self._rendered) {
+          self._finalize(self._currIndex);
+        } else {
+          self._rendered = true;
+        }
+      },
+      lazy ? [viewOffset, lazyOffset] : []
     );
 
-    useEffect(swipe ? () => swipe(self, vertical) : noop, [swipe, vertical]);
+    useLayoutEffect(autoSize ? () => autoSize(self, viewOffset) : noop, [
+      autoSize,
+      viewOffset,
+      vertical,
+      gap,
+    ]);
+
+    useEffect(() => {
+      (transition || noTransition)(ctx, self);
+    }, [transition]);
+
+    useEffect(swipe ? () => swipe(self) : noop, [swipe]);
 
     return (
       <>
         <div className={props.className} style={props.style}>
-          <div ref={data[1]}>{self._render(props)}</div>
+          <div ref={ref}>{self._render(props)}</div>
         </div>
         {children && (
-          <CarouselMethodsContext.Provider value={data[2]}>
+          <CarouselMethodsContext.Provider value={ctx}>
             {children}
           </CarouselMethodsContext.Provider>
         )}

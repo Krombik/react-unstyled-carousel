@@ -1,6 +1,6 @@
 import { SwipeModule } from '../types';
 
-const infinitySwipe: SwipeModule = (self, isVertical) => {
+const infinitySwipe: SwipeModule = (self) => {
   const container = self._container;
 
   const wrapper = container.parentElement!;
@@ -12,51 +12,45 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
   >(
     moveEvent: K,
     endEvent: K extends 'mousemove' ? 'mouseup' : 'touchend',
-    getOffset: (e: HTMLElementEventMap[K]) => number
+    e: HTMLElementEventMap[K],
+    getPosition: (e: HTMLElementEventMap[K]) => number
   ) => {
-    let resolve!: () => void;
+    self._isSwiping = true;
 
     let handle: number;
 
-    let offset: number;
+    let start = getPosition(e);
 
-    const currIndex = self._currIndex;
+    let currIndex = self._currIndex;
 
-    const clientProperty = isVertical ? 'clientHeight' : 'clientWidth';
+    const clientSizeKey = self._clientSizeKey;
 
-    const gap = container[clientProperty] - wrapper[clientProperty];
-
-    const itemSize = container.children[0][clientProperty] + gap;
-
-    const promise = new Promise<void>((_resolve) => {
-      resolve = () => {
-        requestAnimationFrame(() => {
-          if (promise == self._completion) {
-            delete self._completion;
-          }
-
-          _resolve();
-        });
-      };
-    });
+    const itemSize =
+      container.children[0][clientSizeKey] +
+      container[clientSizeKey] -
+      wrapper[clientSizeKey];
 
     const jumpTo = self._jumpTo;
 
+    const lazy = self._lazy;
+
     const movingListener = (e: HTMLElementEventMap[K]) => {
-      cancelAnimationFrame(handle);
+      const currPos = getPosition(e);
 
-      offset = getOffset(e);
-
-      if (offset && self._isFree) {
-        self._completion ||= promise;
+      if (!self._completion) {
+        cancelAnimationFrame(handle);
 
         handle = requestAnimationFrame(() => {
-          const nextIndex = currIndex - offset / itemSize;
+          const nextIndex = currIndex + (start - currPos) / itemSize;
 
-          self._lazy(currIndex, nextIndex);
+          lazy(currIndex, nextIndex);
 
           jumpTo(nextIndex);
         });
+      } else {
+        start = currPos;
+
+        currIndex = self._currIndex;
       }
     };
 
@@ -65,9 +59,13 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
 
       container.removeEventListener(moveEvent, movingListener);
 
-      cancelAnimationFrame(handle);
+      if (!self._completion) {
+        cancelAnimationFrame(handle);
 
-      self._cleanup();
+        self._finalize(self._currIndex);
+
+        self._isSwiping = false;
+      }
     };
 
     container.addEventListener(moveEvent, movingListener);
@@ -75,18 +73,15 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
     window.addEventListener(endEvent, endListener);
   };
 
-  const clientProp = `client${isVertical ? 'Y' : 'X'}` as const;
-
   const touchListener = (e: TouchEvent) => {
     if (e.touches.length == 1) {
       e.preventDefault();
 
-      const start = e.changedTouches[0][clientProp];
-
       handleSwipeListener(
         'touchmove',
         'touchend',
-        (e) => e.changedTouches[0][clientProp] - start
+        e,
+        (e) => e.changedTouches[0][self._clientAxisKey]
       );
     }
   };
@@ -94,9 +89,12 @@ const infinitySwipe: SwipeModule = (self, isVertical) => {
   const mouseListener = (e: MouseEvent) => {
     e.preventDefault();
 
-    const start = e[clientProp];
-
-    handleSwipeListener('mousemove', 'mouseup', (e) => e[clientProp] - start);
+    handleSwipeListener(
+      'mousemove',
+      'mouseup',
+      e,
+      (e) => e[self._clientAxisKey]
+    );
   };
 
   container.addEventListener('touchstart', touchListener);

@@ -1,20 +1,22 @@
 import { AutoSizeModule } from '../types';
 
-const autoSize: AutoSizeModule = (container, viewOffset, isVertical) => {
+const autoSize: AutoSizeModule = (self, viewOffset) => {
   let handle: number;
+
+  const container = self._container;
 
   const wrapper = container.parentElement!;
 
   const { style } = wrapper;
 
-  const property = isVertical ? 'height' : 'width';
+  const sizeKey = self._sizeKey;
 
-  const clientProperty = isVertical ? 'clientHeight' : 'clientWidth';
+  const clientSizeKey = self._clientSizeKey;
 
   const setSize = () => {
-    style[property] =
-      container.children[0][clientProperty] * (viewOffset + 1) +
-      (container[clientProperty] - wrapper[clientProperty]) * viewOffset +
+    style[sizeKey] =
+      container.children[0][clientSizeKey] * (viewOffset + 1) +
+      (container[clientSizeKey] - wrapper[clientSizeKey]) * viewOffset +
       'px';
   };
 
@@ -31,7 +33,7 @@ const autoSize: AutoSizeModule = (container, viewOffset, isVertical) => {
   window.addEventListener('orientationchange', listener);
 
   return () => {
-    style.removeProperty(property);
+    style.removeProperty(sizeKey);
 
     window.removeEventListener('resize', listener);
 

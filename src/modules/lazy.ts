@@ -111,22 +111,26 @@ const lazy: LazyModule = (self) => {
     );
   };
 
-  self._cleanup = () => {
-    const currIndex = self._currIndex;
+  self._finalize = (currIndex) => {
+    currIndex = ((currIndex % itemsCount) + itemsCount) % itemsCount;
+
+    const flooredIndex = currIndex | 0;
+
+    const ceiledIndex = Math.ceil(currIndex);
 
     const { keepMounted = 0, lazyOffset = 0, viewOffset = 0 } = self._props;
 
     const maxItems = Math.max(
       keepMounted,
-      lazyOffset * 2 + viewOffset + 1 + Math.ceil(currIndex - (currIndex | 0))
+      lazyOffset * 2 + viewOffset + 1 + ceiledIndex - flooredIndex
     );
 
     let isUpdated =
       lazyOffset &&
       (start || end < itemsCount) &&
       handleLazy(
-        (currIndex | 0) - lazyOffset,
-        Math.ceil(currIndex) + lazyOffset + viewOffset + 1
+        flooredIndex - lazyOffset,
+        ceiledIndex + lazyOffset + viewOffset + 1
       );
 
     if (isUpdated) {
@@ -139,7 +143,7 @@ const lazy: LazyModule = (self) => {
       if (lastNextIndex > prevIndex) {
         const endIndex =
           binarySearch(
-            (Math.ceil(currIndex) + lazyOffset + viewOffset) % itemsCount,
+            (ceiledIndex + lazyOffset + viewOffset) % itemsCount,
             start,
             end
           ) + 1;
@@ -156,8 +160,7 @@ const lazy: LazyModule = (self) => {
           start = endIndex - maxItems;
         }
       } else {
-        const realIndex =
-          ((currIndex | 0) - lazyOffset + itemsCount) % itemsCount;
+        const realIndex = (flooredIndex - lazyOffset + itemsCount) % itemsCount;
 
         const startIndex = binarySearch(realIndex, start, end);
 
@@ -176,12 +179,10 @@ const lazy: LazyModule = (self) => {
     }
 
     if (isUpdated) {
-      self._jumpTo(currIndex);
-
       self._forceRerender({});
     }
 
-    prevIndex = currIndex;
+    self._jumpTo((prevIndex = currIndex));
   };
 
   self._lazy = (currIndex, nextIndex) => {

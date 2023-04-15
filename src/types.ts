@@ -3,26 +3,16 @@ import { CSSProperties } from 'react';
 type Falsy = false | undefined | null | 0 | '';
 
 export type SwipeModule = {
-  (self: InnerSelf, isVertical?: boolean): () => void;
+  (self: InnerSelf): () => void;
 };
 export type TransitionModule = {
-  (
-    this: InnerSelf,
-    delta: number,
-    timingFunction: TimingFunction,
-    duration: number,
-    resolve: () => void
-  ): void;
+  (ctx: CarouselMethods, self: InnerSelf): void;
 };
 export type TypeModule = {
-  (self: InnerSelf, ctx: CarouselMethods): void;
+  (self: InnerSelf): void;
 };
 export type AutoSizeModule = {
-  (
-    container: HTMLDivElement,
-    viewOffset: number,
-    isVertical?: boolean
-  ): () => void;
+  (self: InnerSelf, viewOffset: number): () => void;
 };
 export type LazyModule = { (self: InnerSelf): void };
 
@@ -73,15 +63,18 @@ export type InnerSelf = {
   _handleIndex(index: number): number;
   _forceRerender(_: {}): void;
   _lazy(currIndex: number, nextIndex: number): void;
-  _cleanup(): void;
+  _finalize(currIndex: number): void;
   _render(props: CarouselProps): JSX.Element[];
-  _go: TransitionModule | Falsy;
   _translateAxis: string;
   _completion?: Promise<void>;
-  _isFree: boolean;
+  _isSwiping: boolean;
   _currIndex: number;
   _props: CarouselProps;
   _container: HTMLDivElement;
+  _sizeKey: 'height' | 'width';
+  _clientSizeKey: `client${'Height' | 'Width'}`;
+  _clientAxisKey: `client${'X' | 'Y'}`;
+  _rendered?: boolean;
 };
 
 export type CarouselMethods = {

@@ -15,7 +15,9 @@ const handleGo = (
     timingFunction?: TimingFunction,
     duration?: Duration
   ) => {
-    self._isFree = false;
+    if (self._isSwiping) {
+      return Promise.reject();
+    }
 
     let resolve!: () => void;
 
@@ -23,15 +25,11 @@ const handleGo = (
 
     const promise = new Promise<void>((_resolve) => {
       resolve = () => {
-        requestAnimationFrame(() => {
-          if (promise == self._completion) {
-            delete self._completion;
+        if (promise == self._completion) {
+          delete self._completion;
+        }
 
-            self._isFree = true;
-          }
-
-          _resolve();
-        });
+        _resolve();
       };
     });
 
@@ -48,11 +46,7 @@ const handleGo = (
     const delta = valueToDelta(value);
 
     if (delta) {
-      let start: number;
-
-      let currTime: number;
-
-      let progress = 0;
+      const jumpTo = self._jumpTo;
 
       const prevIndex = self._currIndex;
 
@@ -66,32 +60,38 @@ const handleGo = (
         duration = duration(Math.abs(delta));
       }
 
-      self._speedup = () => {
-        self._speedup = noop;
+      requestAnimationFrame((start) => {
+        let currTime = start;
 
-        duration = 100;
+        let progress = 0;
 
-        start = currTime - progress * duration;
-      };
+        self._speedup = () => {
+          self._speedup = noop;
 
-      const tick = (time: number) => {
-        currTime = time;
+          duration = 100;
 
-        progress = (time - start) / (duration as number);
+          start = currTime - progress * duration;
+        };
 
-        if (progress < 1) {
-          self._jumpTo(prevIndex + delta * timingFunction!(progress));
+        const tick = (time: number) => {
+          currTime = time;
 
-          requestAnimationFrame(tick);
-        } else {
-          self._jumpTo(prevIndex + delta);
+          progress = (time - start) / (duration as number);
 
-          resolve();
-        }
-      };
+          if (progress < 1) {
+            jumpTo(prevIndex + delta * timingFunction!(progress));
 
-      requestAnimationFrame((time) => {
-        currTime = start = time;
+            requestAnimationFrame(tick);
+          } else {
+            self._finalize(prevIndex + delta);
+
+            requestAnimationFrame(resolve);
+          }
+        };
+
+        self._lazy(prevIndex, prevIndex + delta);
+
+        jumpTo(prevIndex);
 
         requestAnimationFrame(tick);
       });
