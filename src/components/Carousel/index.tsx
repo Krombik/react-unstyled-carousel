@@ -46,6 +46,7 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
             : defaultIndex,
         parent: parentCtx,
         children: {},
+        isGoing: false,
       } as CarouselMethods;
 
       const self = {
@@ -57,6 +58,9 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
         _render(props) {
           return props.items.map(props.renderItem);
         },
+        _speedup: noop as any,
+        _speedupQueue: noop as any,
+        _cancel: noop,
       } as InnerSelf;
 
       if (lazy) {
@@ -162,7 +166,7 @@ const Carousel = forwardRef<CarouselMethods, PropsWithChildren<CarouselProps>>(
       (transition || noTransition)(ctx, self);
     }, [transition]);
 
-    useEffect(swipe ? () => swipe(self) : noop, [swipe]);
+    useEffect(swipe ? () => swipe(self, ctx) : noop, [swipe]);
 
     return (
       <>

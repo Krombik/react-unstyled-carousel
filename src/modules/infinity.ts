@@ -18,7 +18,7 @@ const infinity: TypeModule = (self) => {
 
     const l = props.items.length;
 
-    const maxLength = l - (props.viewOffset || 0) - 1;
+    const maxLength = l - Math.ceil(props.viewOffset || 0) - 1;
 
     const currIndex = ((index % l) + l) % l;
 

@@ -3,21 +3,23 @@ import {
   Carousel,
   autoSize,
   infinity,
-  infinitySwipe,
-  infinityTransition,
+  swipe,
+  transition,
   ease,
   lazy,
   cubicBezier,
+  easeOutQuart,
 } from 'react-unstuled-carousel';
+import { CarouselMethods } from 'react-unstuled-carousel/types';
 
 const items = Array.from({ length: 20 }, (_, index) => index);
 
 const TRANSITION = ease;
 
-const DURATION = 300;
+const DURATION = 3000;
 
 const Home: VFC = () => {
-  const kek = useRef<any>(null);
+  const kek = useRef<CarouselMethods>(null);
   return (
     <>
       <div>
@@ -28,11 +30,11 @@ const Home: VFC = () => {
             items={items}
             type={infinity}
             // autoSize={autoSize}
-            swipe={infinitySwipe}
-            transition={infinityTransition}
+            swipe={swipe}
+            transition={transition}
             // defaultIndex={7}
             keepMounted={10}
-            viewOffset={4}
+            // viewOffset={0.5}
             // transitionDuration={3000}
             lazy={lazy}
             lazyOffset={1}
@@ -47,47 +49,66 @@ const Home: VFC = () => {
                 {item as any}
               </div>
             )}
+            onSwipeEnd={(ctx, index, getMomentum) => {
+              const momentum = getMomentum();
+
+              ctx.go(
+                Math.round(index + momentum[0]) - index,
+                momentum[1] || 200,
+                easeOutQuart
+              );
+            }}
           />
         </div>
       </div>
       <button
         onClick={() => {
-          kek.current!.go(-2, TRANSITION, DURATION);
+          kek.current!.go(
+            -2,
+
+            DURATION,
+            TRANSITION
+          );
         }}
       >
         prev2
       </button>
       <button
         onClick={() => {
-          kek.current!.go(-1, TRANSITION, DURATION);
+          kek.current!.go(-1, DURATION, TRANSITION);
         }}
       >
         prev
       </button>
       <button
         onClick={() => {
-          kek.current!.go(1, TRANSITION, DURATION);
+          kek.current!.go(
+            1,
+
+            DURATION,
+            TRANSITION
+          );
         }}
       >
         next
       </button>
       <button
         onClick={() => {
-          kek.current!.go(2, TRANSITION, DURATION);
+          kek.current!.go(2, DURATION, TRANSITION);
         }}
       >
         next2
       </button>
       <button
         onClick={() => {
-          kek.current!.go(4, TRANSITION, DURATION);
+          kek.current!.go(4, DURATION, TRANSITION);
         }}
       >
         next4
       </button>
       <button
         onClick={() => {
-          kek.current!.go(5, TRANSITION, DURATION);
+          kek.current!.go(5, DURATION, TRANSITION);
         }}
       >
         next5
@@ -97,7 +118,7 @@ const Home: VFC = () => {
         <button
           key={item}
           onClick={() => {
-            kek.current!.goTo(item, TRANSITION, DURATION);
+            kek.current!.goTo(item, DURATION, TRANSITION);
           }}
         >
           {item}

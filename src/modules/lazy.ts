@@ -100,7 +100,7 @@ const lazy: LazyModule = (self) => {
 
   handleLazy(
     (prevIndex | 0) - lazyOffset,
-    Math.ceil(prevIndex) + lazyOffset + (props.viewOffset || 0) + 1
+    Math.ceil(prevIndex + (props.viewOffset || 0)) + lazyOffset + 1
   );
 
   self._handleIndex = (currIndex) => {
@@ -116,22 +116,19 @@ const lazy: LazyModule = (self) => {
 
     const flooredIndex = currIndex | 0;
 
-    const ceiledIndex = Math.ceil(currIndex);
-
     const { keepMounted = 0, lazyOffset = 0, viewOffset = 0 } = self._props;
+
+    const ceiledEndIndex = Math.ceil(currIndex + viewOffset + lazyOffset);
 
     const maxItems = Math.max(
       keepMounted,
-      lazyOffset * 2 + viewOffset + 1 + ceiledIndex - flooredIndex
+      lazyOffset + 1 + ceiledEndIndex - flooredIndex
     );
 
     let isUpdated =
       lazyOffset &&
       (start || end < itemsCount) &&
-      handleLazy(
-        flooredIndex - lazyOffset,
-        ceiledIndex + lazyOffset + viewOffset + 1
-      );
+      handleLazy(flooredIndex - lazyOffset, ceiledEndIndex + 1);
 
     if (isUpdated) {
       indexes.subarray(start, end).sort();
@@ -142,11 +139,7 @@ const lazy: LazyModule = (self) => {
 
       if (lastNextIndex > prevIndex) {
         const endIndex =
-          binarySearch(
-            (ceiledIndex + lazyOffset + viewOffset) % itemsCount,
-            start,
-            end
-          ) + 1;
+          binarySearch(ceiledEndIndex % itemsCount, start, end) + 1;
 
         const overlap = endIndex - maxItems - start;
 
@@ -193,12 +186,15 @@ const lazy: LazyModule = (self) => {
 
       const lazyOffset = props.lazyOffset || 0;
 
+      const viewOffset = props.viewOffset || 0;
+
       if (
         handleLazy(
           Math.min((currIndex | 0) - lazyOffset, Math.floor(nextIndex)),
-          Math.max(Math.ceil(currIndex) + lazyOffset, Math.ceil(nextIndex)) +
-            (props.viewOffset || 0) +
-            1
+          Math.max(
+            Math.ceil(currIndex + viewOffset) + lazyOffset,
+            Math.ceil(nextIndex + viewOffset)
+          ) + 1
         )
       ) {
         indexes.subarray(start, end).sort();
