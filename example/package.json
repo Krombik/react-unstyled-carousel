@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "@types/node": "link:../node_modules/@types/node",
-    "@types/react": "^18.0.9",
-    "@types/react-dom": "^18.0.3",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
+    "@types/react": "^18.0.37",
+    "@types/react-dom": "^18.0.11",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-scripts": "^5.0.1",
     "typescript": "link:../node_modules/typescript",
-    "react-unstuled-carousel": "link:../build"
+    "react-unstyled-carousel": "link:../build"
   },
   "eslintConfig": {
     "extends": "react-app"

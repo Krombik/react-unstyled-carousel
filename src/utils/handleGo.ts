@@ -1,11 +1,11 @@
-import { InnerSelf, CarouselMethods, TimingFunction, Duration } from '../types';
+import { InternalData, CarouselData, TimingFunction, Duration } from '../types';
 import isFunction from './isFunction';
 import noop from './noop';
 
 /** @internal */
 const handleGo = (
-  self: InnerSelf,
-  ctx: CarouselMethods,
+  innerData: InternalData,
+  data: CarouselData,
   transformGoValue: (value: number) => number,
   transformGoToValue: (value: number) => number
 ) => {
@@ -13,51 +13,67 @@ const handleGo = (
 
   let queueDuration: number | undefined;
 
+  let resolve: (isCanceled: boolean, index?: number) => void = noop;
+
+  let speedup: (duration: number) => void = noop;
+
+  let speedupQueue: (duration: number) => void = noop;
+
+  let isGoing = false;
+
   const go = async (
     valueToDelta: (value: number) => number,
     value: number,
     duration?: Duration,
     timingFunction?: TimingFunction
   ) => {
-    if (self._isSwiping) {
+    if (data.isSwiping()) {
       return Promise.reject();
     }
 
-    let resolve!: (isSuccessful: boolean) => void;
+    let currResolve!: typeof resolve;
 
     const prevPromise = completion;
 
     const promise = new Promise<boolean>((_resolve) => {
-      resolve = (value) => {
+      currResolve = (isCanceled, index) => {
         if (promise == completion) {
-          ctx.isGoing = false;
+          isGoing = false;
 
           queueDuration = completion = undefined;
+        } else {
+          isGoing = !isCanceled;
         }
 
-        _resolve(value);
+        if (index != undefined) {
+          innerData._finalize(index);
+        }
+
+        speedupQueue = speedup = resolve = noop;
+
+        _resolve(isCanceled);
       };
     });
 
     completion = promise;
 
     if (prevPromise && (await prevPromise)) {
-      resolve(true);
+      currResolve(true);
     } else {
+      resolve = currResolve;
+
       const delta = valueToDelta(value);
 
       if (delta) {
-        ctx.isGoing = true;
+        isGoing = true;
 
-        let isGoing = true;
+        const jumpTo = innerData._jumpTo;
 
-        const jumpTo = self._jumpTo;
-
-        const prevIndex = self._currIndex;
+        const prevIndex = innerData._currIndex;
 
         const nextIndex = prevIndex + delta;
 
-        const props = self._props;
+        const props = innerData._props;
 
         timingFunction ||= props.timingFunction!;
 
@@ -67,24 +83,18 @@ const handleGo = (
           duration ||= props.transitionDuration!;
 
           if (isFunction(duration)) {
-            duration = duration(Math.abs(delta));
+            duration = duration(delta);
           }
         }
 
-        self._speedup = (newDuration) => {
+        speedup = (newDuration) => {
           duration = newDuration;
         };
 
-        self._speedupQueue = (duration) => {
+        speedupQueue = (duration) => {
           queueDuration = duration;
 
-          self._speedup(duration);
-        };
-
-        self._cancel = () => {
-          isGoing = false;
-
-          resolve(true);
+          speedup(duration);
         };
 
         requestAnimationFrame((start) => {
@@ -92,7 +102,7 @@ const handleGo = (
 
           let progress = 0;
 
-          self._speedup = (newDuration) => {
+          speedup = (newDuration) => {
             if (duration != newDuration) {
               duration = newDuration;
 
@@ -111,46 +121,46 @@ const handleGo = (
 
                 requestAnimationFrame(tick);
               } else {
-                self._finalize(nextIndex);
-
-                self._speedup = noop;
-
-                self._cancel = noop;
-
-                self._speedupQueue = noop;
-
-                resolve(false);
+                currResolve(false, nextIndex);
               }
             }
           };
 
-          self._lazy(prevIndex, nextIndex);
+          innerData._lazy(prevIndex, nextIndex);
 
           jumpTo(prevIndex);
 
           requestAnimationFrame(tick);
         });
       } else {
-        resolve(false);
+        currResolve(false);
       }
     }
 
     return promise;
   };
 
-  ctx.cancelRunningQueue = () => {
-    if (ctx.isGoing) {
-      self._cancel();
-
-      self._finalize(self._currIndex);
-    }
+  data.cancelRunningQueue = () => {
+    resolve(true, innerData._currIndex);
   };
 
-  ctx.updateRunningDuration = (newDuration) => self._speedup(newDuration);
+  data.updateRunningDuration = (newDuration) => {
+    speedup(newDuration);
+  };
 
-  ctx.go = go.bind(null, transformGoValue);
+  data.setDurationForRunningQueue = (duration) => {
+    speedupQueue(duration);
+  };
 
-  ctx.goTo = go.bind(null, transformGoToValue);
+  data.isGoing = () => isGoing;
+
+  data.go = go.bind(null, transformGoValue);
+
+  data.goTo = go.bind(null, transformGoToValue);
+
+  return () => {
+    resolve(true);
+  };
 };
 
 /** @internal */

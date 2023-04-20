@@ -3,22 +3,23 @@ import ts from 'typescript';
 import fs from 'fs/promises';
 import { FILES_TO_COPY, Folder } from './constants.mjs';
 import {
-  // addNestedPackagesJson,
+  addNestedPackagesJson,
   getMainPackageJson,
   handleChild,
 } from './utils.mjs';
 
 const run = async (outDir: string) => {
-  // await fs.rm(outDir, { recursive: true, force: true });
+  await fs.rm(outDir, { recursive: true, force: true });
 
   await build({
     outDir,
     minify: false,
     entry: [
       'src/index.ts',
-      // `src/${Folder.COMPONENTS}/*/*.(ts|tsx)`,
-      // `src/${Folder.HOOKS}/!(${Folder.SERVICE})/*.ts`,
-      // `src/${Folder.HOOKS}/${Folder.SERVICE}/*/*.ts`,
+      `src/${Folder.COMPONENTS}/*/*.(ts|tsx)`,
+      `src/${Folder.HOOKS}/*/*.ts`,
+      `src/${Folder.MODULES}/*/*.ts`,
+      `src/${Folder.TIMING_FUNCTIONS}/*.ts`,
     ],
     splitting: true,
     sourcemap: true,
@@ -49,7 +50,7 @@ const run = async (outDir: string) => {
 
   const chunksDir = `${outDir}/${Folder.CHUNKS}`;
 
-  // await fs.mkdir(chunksDir);
+  await fs.mkdir(chunksDir);
 
   for (let i = 0; i < children.length; i++) {
     const file = children[i];
@@ -63,8 +64,10 @@ const run = async (outDir: string) => {
     }
   }
 
-  // await addNestedPackagesJson(`${outDir}/${Folder.COMPONENTS}`);
-  // await addNestedPackagesJson(`${outDir}/${Folder.HOOKS}`, [Folder.SERVICE]);
+  await addNestedPackagesJson(`${outDir}/${Folder.COMPONENTS}`);
+  await addNestedPackagesJson(`${outDir}/${Folder.HOOKS}`);
+  await addNestedPackagesJson(`${outDir}/${Folder.MODULES}`);
+  await addNestedPackagesJson(`${outDir}/${Folder.TIMING_FUNCTIONS}`, true);
 
   await fs.writeFile(`${outDir}/package.json`, await getMainPackageJson());
 

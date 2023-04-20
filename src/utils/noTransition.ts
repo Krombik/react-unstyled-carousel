@@ -1,16 +1,19 @@
 import { TransitionModule } from '../types';
+import getFalse from './getFalse';
 import noop from './noop';
 
 /** @internal */
-const noTransition: TransitionModule = (ctx) => {
+const noTransition: TransitionModule = (data) => {
   // @ts-expect-error
-  ctx.go = noop;
+  data.go = noop;
   // @ts-expect-error
-  ctx.goTo = noop;
+  data.goTo = noop;
 
-  ctx.updateRunningDuration = noop;
+  data.updateRunningDuration = noop;
 
-  ctx.cancelRunningQueue = noop;
+  data.cancelRunningQueue = noop;
+
+  data.isGoing = getFalse;
 };
 
 /** @internal */

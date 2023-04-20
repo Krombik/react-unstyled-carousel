@@ -1,28 +1,35 @@
 import React, { FC, PropsWithChildren, createContext, useState } from 'react';
-import { CarouselMethods } from '../types';
+import { CarouselData } from '../types';
 
 type Props = PropsWithChildren<{
-  methods: CarouselMethods;
-  saveSetActiveMethod(setActive: (value: number | null) => void): void;
+  data: CarouselData;
 }>;
 
-const CarouselMethodsContext = createContext<CarouselMethods>(null as any);
-const CarouselActiveContext = createContext<number | null>(null);
+/** @internal */
+export const CarouselContext = createContext<CarouselData>(null as any);
+/** @internal */
+export const CarouselActiveContext = createContext<number | null>(null);
 
 /** @internal */
 const CarouselProvider: FC<Props> = (props) => {
-  const [activeIndex, setActiveIndex] = useState<number | null>(() => {
-    props.saveSetActiveMethod(setActiveIndex);
+  const { data } = props;
 
-    return props.methods.activeIndex;
+  const [activeIndex, setActiveIndex] = useState<number | null>(() => {
+    data.setActive = (index) => {
+      data.activeIndex = index;
+
+      setActiveIndex(index);
+    };
+
+    return data.activeIndex;
   });
 
   return (
-    <CarouselMethodsContext.Provider value={props.methods}>
+    <CarouselContext.Provider value={data}>
       <CarouselActiveContext.Provider value={activeIndex}>
         {props.children}
       </CarouselActiveContext.Provider>
-    </CarouselMethodsContext.Provider>
+    </CarouselContext.Provider>
   );
 };
 

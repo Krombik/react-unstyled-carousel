@@ -1,7 +1,8 @@
 export enum Folder {
   COMPONENTS = 'components',
   HOOKS = 'hooks',
-  SERVICE = 'service',
+  MODULES = 'modules',
+  TIMING_FUNCTIONS = 'timingFunctions',
   CHUNKS = '_chunks',
 }
 

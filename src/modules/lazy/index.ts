@@ -1,19 +1,7 @@
-import { LazyModule } from '../types';
+import { LazyModule } from '../../types';
 
-const lazy: LazyModule = (self) => {
-  const props = self._props;
-
-  let prevFrom: number;
-
-  let prevTo: number;
-
-  let lastNextIndex: number;
-
-  let start = 0;
-
-  let end = 0;
-
-  let prevIndex = props.defaultIndex || 0;
+const lazy: LazyModule = (innerData) => {
+  const props = innerData._props;
 
   const itemsCount = props.items.length;
 
@@ -26,6 +14,18 @@ const lazy: LazyModule = (self) => {
       ? Uint16Array
       : Uint32Array
   )(itemsCount);
+
+  let prevFrom: number;
+
+  let prevTo: number;
+
+  let lastNextIndex: number;
+
+  let start = 0;
+
+  let end = 0;
+
+  let prevIndex = props.defaultIndex || 0;
 
   const binarySearch = (value: number, start: number, end: number) => {
     value++;
@@ -103,7 +103,7 @@ const lazy: LazyModule = (self) => {
     Math.ceil(prevIndex + (props.viewOffset || 0)) + lazyOffset + 1
   );
 
-  self._handleIndex = (currIndex) => {
+  innerData._handleIndex = (currIndex) => {
     const flooredIndex = currIndex | 0;
 
     return (
@@ -111,12 +111,16 @@ const lazy: LazyModule = (self) => {
     );
   };
 
-  self._finalize = (currIndex) => {
+  innerData._finalize = (currIndex) => {
     currIndex = ((currIndex % itemsCount) + itemsCount) % itemsCount;
 
     const flooredIndex = currIndex | 0;
 
-    const { keepMounted = 0, lazyOffset = 0, viewOffset = 0 } = self._props;
+    const {
+      keepMounted = 0,
+      lazyOffset = 0,
+      viewOffset = 0,
+    } = innerData._props;
 
     const ceiledEndIndex = Math.ceil(currIndex + viewOffset + lazyOffset);
 
@@ -172,17 +176,17 @@ const lazy: LazyModule = (self) => {
     }
 
     if (isUpdated) {
-      self._forceRerender({});
+      innerData._forceRerender({});
     }
 
-    self._jumpTo((prevIndex = currIndex));
+    innerData._jumpTo((prevIndex = currIndex));
   };
 
-  self._lazy = (currIndex, nextIndex) => {
+  innerData._lazy = (currIndex, nextIndex) => {
     lastNextIndex = nextIndex;
 
     if (start || end < itemsCount) {
-      const props = self._props;
+      const props = innerData._props;
 
       const lazyOffset = props.lazyOffset || 0;
 
@@ -199,12 +203,12 @@ const lazy: LazyModule = (self) => {
       ) {
         indexes.subarray(start, end).sort();
 
-        self._forceRerender({});
+        innerData._forceRerender({});
       }
     }
   };
 
-  self._render = ({ items, renderItem }) => {
+  innerData._render = ({ items, renderItem }) => {
     const arr: JSX.Element[] = [];
 
     for (let i = start; i < end; i++) {

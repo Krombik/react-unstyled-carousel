@@ -3,18 +3,18 @@ import { CSSProperties } from 'react';
 type Falsy = false | undefined | null | 0 | '';
 
 export type SwipeModule = {
-  (self: InnerSelf, ctx: CarouselMethods): () => void;
+  (innerData: InternalData, data: CarouselData): () => void;
 };
 export type TransitionModule = {
-  (ctx: CarouselMethods, self: InnerSelf): void;
+  (data: CarouselData, innerData: InternalData): void | (() => void);
 };
 export type TypeModule = {
-  (self: InnerSelf): void;
+  (innerData: InternalData): void;
 };
 export type AutoSizeModule = {
-  (self: InnerSelf, viewOffset: number): () => void;
+  (innerData: InternalData, viewOffset: number): () => void;
 };
-export type LazyModule = { (self: InnerSelf): void };
+export type LazyModule = { (innerData: InternalData): void };
 
 export type CarouselProps<T = any> = {
   items: T[];
@@ -30,7 +30,6 @@ export type CarouselProps<T = any> = {
   transitionDuration?: Duration;
   lazyOffset?: number;
   keepMounted?: number;
-  name?: string;
   /**
    * @default 0
    */
@@ -42,13 +41,12 @@ export type CarouselProps<T = any> = {
   vertical?: boolean;
   /**
    * Number of additional slides to display in the carousel view.
-   * - If {@link Props.middle middle} is `true`, additional slides will be showed after the current slide, overwise additional slides will be showed before and after the current
    */
   viewOffset?: number;
   gap?: string;
-  swipeEndTransition?: string;
+  onSwipeStart?(carousel: CarouselData): void;
   onSwipeEnd?(
-    ctx: CarouselMethods,
+    carousel: CarouselData,
     index: number,
     getMomentum: (
       velocityThreshold?: number,
@@ -57,32 +55,28 @@ export type CarouselProps<T = any> = {
   ): void;
 };
 
-export type UintArray = Uint8Array | Uint16Array | Uint32Array;
-
 /** @internal */
-export type InnerSelf = {
+export type ClientAxisKey = `client${'X' | 'Y'}`;
+
+export type InternalData = {
   _jumpTo(index: number): void;
   _translate(index: number): void;
-  _speedup(newDuration: number): void;
-  _speedupQueue(newDuration: number): void;
   _handleIndex(index: number): number;
   _forceRerender(_: {}): void;
   _lazy(currIndex: number, nextIndex: number): void;
   _finalize(currIndex: number): void;
   _render(props: CarouselProps): JSX.Element[];
-  _cancel(): void;
-  _isSwiping: boolean;
   _currIndex: number;
   _props: CarouselProps;
   _container: HTMLDivElement;
   _translateAxis: `translate${'X' | 'Y'}(`;
   _sizeKey: 'height' | 'width';
   _clientSizeKey: `client${'Height' | 'Width'}`;
-  _clientAxisKey: `client${'X' | 'Y'}`;
+  _clientAxisKey: ClientAxisKey;
   _rendered?: boolean;
 };
 
-export type CarouselMethods = {
+export type CarouselData = {
   activeIndex: number | null;
   setActive(index: number | null): void;
   go(
@@ -99,11 +93,11 @@ export type CarouselMethods = {
   updateRunningDuration(newDuration: number): void;
   setDurationForRunningQueue(duration: number): void;
   cancelRunningQueue(): void;
-  parent: CarouselMethods | null;
-  children: Partial<Record<string, CarouselMethods>>;
-  isGoing: boolean;
+  isGoing(): boolean;
+  isSwiping(): boolean;
+  getCurrentIndex(): number;
 };
 
-export type Duration = number | ((distance: number) => number);
+export type Duration = number | ((delta: number) => number);
 
 export type TimingFunction = (progress: number) => number;

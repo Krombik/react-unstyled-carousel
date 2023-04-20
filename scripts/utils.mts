@@ -10,16 +10,16 @@ const NESTED_PACKAGE_JSON = JSON.stringify({
 
 export const addNestedPackagesJson = async (
   path: string,
-  nested: string[] = []
+  isIndex?: boolean
 ) => {
-  const dirs = await fs.readdir(path);
+  if (isIndex) {
+    await fs.writeFile(`${path}/package.json`, NESTED_PACKAGE_JSON);
+  } else {
+    const dirs = await fs.readdir(path);
 
-  for (let i = 0; i < dirs.length; i++) {
-    const folder = dirs[i];
+    for (let i = 0; i < dirs.length; i++) {
+      const folder = dirs[i];
 
-    if (nested.includes(folder)) {
-      await addNestedPackagesJson(`${path}/${folder}`);
-    } else {
       await fs.writeFile(`${path}/${folder}/package.json`, NESTED_PACKAGE_JSON);
     }
   }
@@ -79,7 +79,7 @@ export const handleChild = async (path: string) => {
   } else if (path.endsWith('.js')) {
     await updateExport(
       path,
-      /(export \{ .+ as .+ \} from\s+['"][\.\.\/]+)(chunk-\w+\.js['"])/g
+      /(export \{ .+ \} from\s+['"][\.\.\/]+)(chunk-\w+\.js['"])/g
     );
   } else if (path.endsWith('.cjs')) {
     await updateExport(path, /(require\(['"][\.\.\/]+)(chunk-\w+\.cjs['"]\))/g);

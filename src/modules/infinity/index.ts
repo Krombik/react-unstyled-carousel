@@ -1,9 +1,10 @@
-import { TypeModule } from '../types';
+import { TypeModule } from '../../types';
 
-const infinity: TypeModule = (self) => {
+const infinity: TypeModule = (innerData) => {
   const styles: CSSStyleDeclaration[] = [];
 
-  const children = self._container.children as HTMLCollectionOf<HTMLElement>;
+  const children = innerData._container
+    .children as HTMLCollectionOf<HTMLElement>;
 
   const removeOrder = (from: number) => {
     for (let i = from; i < styles.length; i++) {
@@ -13,8 +14,8 @@ const infinity: TypeModule = (self) => {
     styles.length = from;
   };
 
-  self._jumpTo = (index: number) => {
-    const props = self._props;
+  innerData._jumpTo = (index: number) => {
+    const props = innerData._props;
 
     const l = props.items.length;
 
@@ -24,7 +25,7 @@ const infinity: TypeModule = (self) => {
 
     const currEnd = styles.length;
 
-    self._currIndex = currIndex;
+    innerData._currIndex = currIndex;
 
     if (currIndex > maxLength) {
       const end = Math.ceil(currIndex) - maxLength;
@@ -42,7 +43,7 @@ const infinity: TypeModule = (self) => {
       removeOrder(0);
     }
 
-    self._translate(self._handleIndex(currIndex) - styles.length);
+    innerData._translate(innerData._handleIndex(currIndex) - styles.length);
   };
 };
 

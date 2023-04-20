@@ -1,4 +1,4 @@
-import { VFC, useRef } from 'react';
+import { VFC, useEffect, useRef } from 'react';
 import {
   Carousel,
   autoSize,
@@ -9,17 +9,17 @@ import {
   lazy,
   cubicBezier,
   easeOutQuart,
-} from 'react-unstuled-carousel';
-import { CarouselMethods } from 'react-unstuled-carousel/types';
+  CarouselData,
+} from 'react-unstyled-carousel';
 
 const items = Array.from({ length: 20 }, (_, index) => index);
 
 const TRANSITION = ease;
 
-const DURATION = 3000;
+const DURATION = 300;
 
 const Home: VFC = () => {
-  const kek = useRef<CarouselMethods>(null);
+  const kek = useRef<CarouselData>(null);
   return (
     <>
       <div>
@@ -37,9 +37,9 @@ const Home: VFC = () => {
             // viewOffset={0.5}
             // transitionDuration={3000}
             lazy={lazy}
-            lazyOffset={1}
+            // lazyOffset={1}
             // lazy={1}
-            gap='9px'
+            // gap='9px'
             renderItem={(item, index) => (
               <div
                 className='item'
@@ -49,6 +49,9 @@ const Home: VFC = () => {
                 {item as any}
               </div>
             )}
+            onSwipeStart={(carousel) => {
+              carousel.cancelRunningQueue();
+            }}
             onSwipeEnd={(ctx, index, getMomentum) => {
               const momentum = getMomentum();
 
@@ -82,12 +85,8 @@ const Home: VFC = () => {
       </button>
       <button
         onClick={() => {
-          kek.current!.go(
-            1,
-
-            DURATION,
-            TRANSITION
-          );
+          kek.current!.setDurationForRunningQueue(100);
+          kek.current!.go(1, DURATION, TRANSITION);
         }}
       >
         next
@@ -124,6 +123,43 @@ const Home: VFC = () => {
           {item}
         </button>
       ))}
+      <Carousel
+        // ref={kek}
+        className='carousel'
+        items={items}
+        type={infinity}
+        // autoSize={autoSize}
+        swipe={swipe}
+        transition={transition}
+        // defaultIndex={7}
+        keepMounted={10}
+        // viewOffset={0.5}
+        // transitionDuration={3000}
+        lazy={lazy}
+        lazyOffset={1}
+        // lazy={1}
+        gap='9px'
+        renderItem={(item, index) => (
+          <div
+            className='item'
+            key={index}
+            style={{ background: index % 2 ? 'yellow' : 'blue' }}
+            onClick={() => console.log('kek')}
+          >
+            {item as any}
+          </div>
+        )}
+        // onSwipeEnd={(ctx, index, getMomentum) => {
+        //   const momentum = getMomentum();
+
+        //   ctx.go(
+        //     Math.round(index + momentum[0]) - index,
+        //     momentum[1] || 200,
+        //     easeOutQuart
+        //   );
+        // }}
+      />
+      <div style={{ height: '100vh' }} />
     </>
   );
 };
