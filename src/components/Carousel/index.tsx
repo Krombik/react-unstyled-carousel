@@ -33,9 +33,16 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
 
     const t = useState<{}>();
 
-    const [innerData, ref, data] = useConst<
-      [InternalData, RefCallback<HTMLDivElement>, CarouselData]
+    const [innerData, data, ref, saveSetActive] = useConst<
+      [
+        InternalData,
+        CarouselData,
+        RefCallback<HTMLDivElement>,
+        (setActiveIndex: (index: number | null) => void) => void
+      ]
     >(() => {
+      let setActive: (index: number | null) => void = noop;
+
       const data = {
         activeIndex:
           'defaultActiveIndex' in props
@@ -44,6 +51,8 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
         isSwiping: getFalse,
         setActive(index) {
           data.activeIndex = index;
+
+          setActive(index);
         },
         jumpTo(index) {
           innerData._lazy(index, index);
@@ -70,6 +79,7 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
 
       return [
         innerData,
+        data,
         (container) => {
           if (container) {
             const { style } = container;
@@ -95,7 +105,9 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
             setRef(outerRef, container);
           }
         },
-        data,
+        (newSetActive) => {
+          setActive = newSetActive;
+        },
       ];
     });
 
@@ -185,7 +197,9 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
           <div ref={ref}>{innerData._render(props)}</div>
         </div>
         {children && (
-          <CarouselProvider data={data}>{children}</CarouselProvider>
+          <CarouselProvider data={data} saveSetActive={saveSetActive}>
+            {children}
+          </CarouselProvider>
         )}
       </>
     );

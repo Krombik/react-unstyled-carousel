@@ -1,8 +1,16 @@
-import React, { FC, PropsWithChildren, createContext, useState } from 'react';
+import React, {
+  FC,
+  PropsWithChildren,
+  createContext,
+  useLayoutEffect,
+  useState,
+} from 'react';
 import { CarouselData } from '../types';
+import noop from '../utils/noop';
 
 type Props = PropsWithChildren<{
   data: CarouselData;
+  saveSetActive(setActiveIndex: (index: number | null) => void): void;
 }>;
 
 /** @internal */
@@ -14,15 +22,19 @@ export const CarouselActiveContext = createContext<number | null>(null);
 const CarouselProvider: FC<Props> = (props) => {
   const { data } = props;
 
-  const [activeIndex, setActiveIndex] = useState<number | null>(() => {
-    data.setActive = (index) => {
-      data.activeIndex = index;
+  const [activeIndex, setActiveIndex] = useState<number | null>(
+    data.activeIndex
+  );
 
-      setActiveIndex(index);
+  useLayoutEffect(() => {
+    const { saveSetActive } = props;
+
+    saveSetActive(setActiveIndex);
+
+    return () => {
+      saveSetActive(noop);
     };
-
-    return data.activeIndex;
-  });
+  }, []);
 
   return (
     <CarouselContext.Provider value={data}>

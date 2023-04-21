@@ -1,17 +1,17 @@
 {
   "name": "react-unstyled-carousel",
   "version": "0.0.1",
-  "description": "Fast, tree-shakable, and light-weight React components and hooks for integrating Google Maps API functionality",
+  "description": "Fast, tree-shakable, and light-weight React carousel",
   "author": "Krombik",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Krombik/google-maps-react.git"
+    "url": "git+https://github.com/Krombik/react-unstyled-carousel.git"
   },
   "bugs": {
-    "url": "https://github.com/Krombik/google-maps-react/issues"
+    "url": "https://github.com/Krombik/react-unstyled-carousel/issues"
   },
-  "homepage": "https://github.com/Krombik/google-maps-react#readme",
+  "homepage": "https://github.com/Krombik/react-unstyled-carousel#readme",
   "type": "module",
   "source": "src/index.ts",
   "engines": {
