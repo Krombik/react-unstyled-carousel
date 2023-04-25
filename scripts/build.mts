@@ -9,7 +9,7 @@ import {
 } from './utils.mjs';
 
 const run = async (outDir: string) => {
-  await fs.rm(outDir, { recursive: true, force: true });
+  await fs.rm(`${outDir}/${Folder.CHUNKS}`, { recursive: true, force: true });
 
   await build({
     outDir,

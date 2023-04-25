@@ -3,7 +3,8 @@ import {
   Carousel,
   autoSize,
   infinity,
-  swipe,
+  mouseSwipe,
+  touchSwipe,
   transition,
   ease,
   lazy,
@@ -30,7 +31,8 @@ const Home: VFC = () => {
             items={items}
             type={infinity}
             // autoSize={autoSize}
-            swipe={swipe}
+            touchSwipe={touchSwipe}
+            mouseSwipe={mouseSwipe}
             transition={transition}
             // defaultIndex={7}
             keepMounted={10}
@@ -84,9 +86,10 @@ const Home: VFC = () => {
         prev
       </button>
       <button
-        onClick={() => {
+        onClick={async () => {
           kek.current!.setDurationForRunningQueue(100);
-          kek.current!.go(1, DURATION, TRANSITION);
+          await kek.current!.go(1, DURATION, TRANSITION);
+          console.log('trr');
         }}
       >
         next
@@ -129,7 +132,8 @@ const Home: VFC = () => {
         items={items}
         type={infinity}
         // autoSize={autoSize}
-        swipe={swipe}
+        mouseSwipe={mouseSwipe}
+        touchSwipe={touchSwipe}
         transition={transition}
         // defaultIndex={7}
         keepMounted={10}

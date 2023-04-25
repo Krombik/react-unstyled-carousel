@@ -1,25 +1,17 @@
-import { InternalData, CarouselData, TimingFunction, Duration } from '../types';
+import { InternalData, TimingFunction, Duration } from '../types';
+import getCanceled from './getCanceled';
 import isFunction from './isFunction';
 import noop from './noop';
 
 /** @internal */
 const handleGo = (
   innerData: InternalData,
-  data: CarouselData,
   transformGoValue: (value: number) => number,
   transformGoToValue: (value: number) => number
 ) => {
-  let completion: Promise<boolean> | undefined;
+  let completion: Promise<number> | undefined;
 
   let queueDuration: number | undefined;
-
-  let resolve: (isCanceled: boolean, index?: number) => void = noop;
-
-  let speedup: (duration: number) => void = noop;
-
-  let speedupQueue: (duration: number) => void = noop;
-
-  let isGoing = false;
 
   const go = async (
     valueToDelta: (value: number) => number,
@@ -27,49 +19,53 @@ const handleGo = (
     duration?: Duration,
     timingFunction?: TimingFunction
   ) => {
-    if (data.isSwiping()) {
-      return Promise.reject();
+    if (innerData._isSwiping) {
+      return getCanceled();
     }
 
-    let currResolve!: typeof resolve;
+    let resolve!: (index: number, jump?: boolean) => void;
 
     const prevPromise = completion;
 
-    const promise = new Promise<boolean>((_resolve) => {
-      currResolve = (isCanceled, index) => {
+    const promise = new Promise<number>((_resolve) => {
+      resolve = (index, jump) => {
         if (promise == completion) {
-          isGoing = false;
+          innerData._isGoing = false;
 
           queueDuration = completion = undefined;
         } else {
-          isGoing = !isCanceled;
+          innerData._isGoing = index >= 0;
         }
 
-        if (index != undefined) {
-          innerData._finalize(index);
+        if (jump) {
+          innerData._finalize(index < 0 ? innerData._currIndex : index);
         }
 
-        speedupQueue = speedup = resolve = noop;
+        innerData._cancel = noop;
 
-        _resolve(isCanceled);
+        innerData._speedup = noop;
+
+        innerData._speedupQueue = noop;
+
+        _resolve(index);
       };
     });
 
     completion = promise;
 
-    if (prevPromise && (await prevPromise)) {
-      currResolve(true);
+    if (prevPromise && (await prevPromise) < 0) {
+      resolve(-1);
     } else {
-      resolve = currResolve;
+      innerData._cancel = resolve;
 
       const delta = valueToDelta(value);
 
+      const prevIndex = innerData._currIndex;
+
       if (delta) {
-        isGoing = true;
+        innerData._isGoing = true;
 
         const jumpTo = innerData._jumpTo;
-
-        const prevIndex = innerData._currIndex;
 
         const nextIndex = prevIndex + delta;
 
@@ -87,14 +83,14 @@ const handleGo = (
           }
         }
 
-        speedup = (newDuration) => {
+        innerData._speedup = (newDuration) => {
           duration = newDuration;
         };
 
-        speedupQueue = (duration) => {
+        innerData._speedupQueue = (duration) => {
           queueDuration = duration;
 
-          speedup(duration);
+          innerData._speedup(duration);
         };
 
         requestAnimationFrame((start) => {
@@ -102,7 +98,7 @@ const handleGo = (
 
           let progress = 0;
 
-          speedup = (newDuration) => {
+          innerData._speedup = (newDuration) => {
             if (duration != newDuration) {
               duration = newDuration;
 
@@ -111,7 +107,7 @@ const handleGo = (
           };
 
           const tick = (time: number) => {
-            if (isGoing) {
+            if (innerData._isGoing) {
               currTime = time;
 
               progress = (time - start) / (duration as number);
@@ -121,7 +117,7 @@ const handleGo = (
 
                 requestAnimationFrame(tick);
               } else {
-                currResolve(false, nextIndex);
+                resolve(nextIndex, true);
               }
             }
           };
@@ -133,33 +129,23 @@ const handleGo = (
           requestAnimationFrame(tick);
         });
       } else {
-        currResolve(false);
+        resolve(prevIndex);
       }
     }
 
     return promise;
   };
 
-  data.cancelRunningQueue = () => {
-    resolve(true, innerData._currIndex);
-  };
+  innerData._go = go.bind(null, transformGoValue);
 
-  data.updateRunningDuration = (newDuration) => {
-    speedup(newDuration);
-  };
-
-  data.setDurationForRunningQueue = (duration) => {
-    speedupQueue(duration);
-  };
-
-  data.isGoing = () => isGoing;
-
-  data.go = go.bind(null, transformGoValue);
-
-  data.goTo = go.bind(null, transformGoToValue);
+  innerData._goTo = go.bind(null, transformGoToValue);
 
   return () => {
-    resolve(true);
+    innerData._cancel(-1);
+
+    innerData._go = getCanceled;
+
+    innerData._goTo = getCanceled;
   };
 };
 

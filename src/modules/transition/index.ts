@@ -2,8 +2,8 @@ import { TransitionModule } from '../../types';
 import handleGo from '../../utils/handleGo';
 import identity from '../../utils/identity';
 
-const transition: TransitionModule = (data, innerData) =>
-  handleGo(innerData, data, identity, (index) => {
+const transition: TransitionModule = (innerData) =>
+  handleGo(innerData, identity, (index) => {
     const l = innerData._props.items.length;
 
     const dist1 = (((index % l) + l) % l) - innerData._currIndex;

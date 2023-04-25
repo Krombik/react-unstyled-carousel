@@ -6,7 +6,7 @@ export type SwipeModule = {
   (innerData: InternalData, data: CarouselData): () => void;
 };
 export type TransitionModule = {
-  (data: CarouselData, innerData: InternalData): void | (() => void);
+  (innerData: InternalData): () => void;
 };
 export type TypeModule = {
   (innerData: InternalData): void;
@@ -24,7 +24,8 @@ export type CarouselProps<T = any> = {
   type: TypeModule;
   lazy?: LazyModule;
   transition?: TransitionModule | Falsy;
-  swipe?: SwipeModule | Falsy;
+  mouseSwipe?: SwipeModule | Falsy;
+  touchSwipe?: SwipeModule | Falsy;
   autoSize?: AutoSizeModule | Falsy;
   timingFunction?: TimingFunction;
   transitionDuration?: Duration;
@@ -65,7 +66,12 @@ export type InternalData = {
   _forceRerender(_: {}): void;
   _lazy(currIndex: number, nextIndex: number): void;
   _finalize(currIndex: number): void;
+  _speedup(duration: number): void;
+  _speedupQueue(duration: number): void;
+  _cancel(index: -1, jump?: true): void;
   _render(props: CarouselProps): JSX.Element[];
+  _go: CarouselData['go'];
+  _goTo: CarouselData['goTo'];
   _currIndex: number;
   _props: CarouselProps;
   _container: HTMLDivElement;
@@ -74,6 +80,8 @@ export type InternalData = {
   _clientSizeKey: `client${'Height' | 'Width'}`;
   _clientAxisKey: ClientAxisKey;
   _rendered?: boolean;
+  _isSwiping: boolean;
+  _isGoing: boolean;
 };
 
 export type CarouselData = {
@@ -83,12 +91,12 @@ export type CarouselData = {
     delta: number,
     duration?: Duration,
     timingFunction?: TimingFunction
-  ): Promise<void>;
+  ): Promise<number>;
   goTo(
     index: number,
     duration?: Duration,
     timingFunction?: TimingFunction
-  ): Promise<void>;
+  ): Promise<number>;
   jumpTo(index: number): void;
   updateRunningDuration(newDuration: number): void;
   setDurationForRunningQueue(duration: number): void;

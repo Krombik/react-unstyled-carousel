@@ -13,8 +13,7 @@ import noop from '../../utils/noop';
 import useConst from '../../utils/useConst';
 import CarouselProvider from '../../providers/CarouselProvider';
 import identity from '../../utils/identity';
-import noTransition from '../../utils/noTransition';
-import getFalse from '../../utils/getFalse';
+import getCanceled from '../../utils/getCanceled';
 
 const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
   (props, outerRef) => {
@@ -26,7 +25,8 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
       defaultIndex = 0,
       autoSize,
       transition,
-      swipe,
+      touchSwipe,
+      mouseSwipe,
       lazy,
       children,
     } = props;
@@ -43,12 +43,11 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
     >(() => {
       let setActive: (index: number | null) => void = noop;
 
-      const data = {
+      const data: CarouselData = {
         activeIndex:
           'defaultActiveIndex' in props
             ? props.defaultActiveIndex!
             : defaultIndex,
-        isSwiping: getFalse,
         setActive(index) {
           data.activeIndex = index;
 
@@ -59,8 +58,23 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
 
           innerData._finalize(index);
         },
+        go: (delta, duration, timingFunction) =>
+          innerData._go(delta, duration, timingFunction),
+        goTo: (index, duration, timingFunction) =>
+          innerData._goTo(index, duration, timingFunction),
+        isSwiping: () => innerData._isSwiping,
+        isGoing: () => innerData._isGoing,
+        cancelRunningQueue() {
+          innerData._cancel(-1, true);
+        },
+        updateRunningDuration(newDuration) {
+          innerData._speedup(newDuration);
+        },
+        setDurationForRunningQueue(duration) {
+          innerData._speedupQueue(duration);
+        },
         getCurrentIndex: () => innerData._currIndex,
-      } as CarouselData;
+      };
 
       const innerData = {
         _lazy: noop as any,
@@ -71,6 +85,13 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
         _render(props) {
           return props.items.map(props.renderItem);
         },
+        _isGoing: false,
+        _isSwiping: false,
+        _go: getCanceled as any,
+        _goTo: getCanceled as any,
+        _cancel: noop as any,
+        _speedup: noop as any,
+        _speedupQueue: noop as any,
       } as InternalData;
 
       if (lazy) {
@@ -155,16 +176,15 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
       };
     }, [viewOffset, vertical, gap]);
 
-    useLayoutEffect(
-      () => {
+    if (lazy) {
+      useLayoutEffect(() => {
         if (innerData._rendered) {
           innerData._finalize(innerData._currIndex);
         } else {
           innerData._rendered = true;
         }
-      },
-      lazy ? [viewOffset, lazyOffset] : []
-    );
+      }, [viewOffset, lazyOffset]);
+    }
 
     useLayoutEffect(autoSize ? () => autoSize(innerData, viewOffset) : noop, [
       autoSize,
@@ -173,23 +193,30 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
       gap,
     ]);
 
-    useEffect(() => {
-      (transition || noTransition)(data, innerData);
-    }, [transition]);
+    useEffect(transition ? () => transition(innerData) : noop, [transition]);
 
-    useEffect(swipe ? () => swipe(innerData, data) : noop, [swipe]);
+    useEffect(mouseSwipe ? () => mouseSwipe(innerData, data) : noop, [
+      mouseSwipe,
+    ]);
 
-    useEffect(() => {
-      if (swipe) {
-        const { style } = innerData._container.parentElement!;
+    useEffect(touchSwipe ? () => touchSwipe(innerData, data) : noop, [
+      touchSwipe,
+    ]);
 
-        style.touchAction = `pan-${vertical ? 'x' : 'y'}`;
+    useEffect(
+      touchSwipe
+        ? () => {
+            const { style } = innerData._container.parentElement!;
 
-        return () => {
-          style.removeProperty('touch-action');
-        };
-      }
-    }, [swipe, vertical]);
+            style.touchAction = `pan-${vertical ? 'x' : 'y'}`;
+
+            return () => {
+              style.removeProperty('touch-action');
+            };
+          }
+        : noop,
+      [touchSwipe, vertical]
+    );
 
     return (
       <>
