@@ -92,6 +92,11 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
         _cancel: noop as any,
         _speedup: noop as any,
         _speedupQueue: noop as any,
+        _isEnabled() {
+          const props = innerData._props;
+
+          return props.items.length > 1 + (props.viewOffset || 0);
+        },
       } as InternalData;
 
       if (lazy) {

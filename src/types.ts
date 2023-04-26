@@ -72,6 +72,7 @@ export type InternalData = {
   _render(props: CarouselProps): JSX.Element[];
   _go: CarouselData['go'];
   _goTo: CarouselData['goTo'];
+  _isEnabled(): boolean;
   _currIndex: number;
   _props: CarouselProps;
   _container: HTMLDivElement;

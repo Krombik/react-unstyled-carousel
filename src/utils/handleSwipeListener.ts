@@ -29,7 +29,7 @@ const handleSwipeListener = <
   } satisfies AddEventListenerOptions;
 
   const startListener = (e: E) => {
-    if (check(e)) {
+    if (innerData._isEnabled() && check(e)) {
       (innerData._props.onSwipeStart || noop)(data);
 
       if (!innerData._isGoing) {

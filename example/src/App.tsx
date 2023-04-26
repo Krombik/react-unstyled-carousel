@@ -13,7 +13,7 @@ import {
   CarouselData,
 } from 'react-unstyled-carousel';
 
-const items = Array.from({ length: 20 }, (_, index) => index);
+const items = Array.from({ length: 1 }, (_, index) => index);
 
 const TRANSITION = ease;
 

@@ -19,7 +19,7 @@ const handleGo = (
     duration?: Duration,
     timingFunction?: TimingFunction
   ) => {
-    if (innerData._isSwiping) {
+    if (!innerData._isEnabled() || innerData._isSwiping) {
       return getCanceled();
     }
 
