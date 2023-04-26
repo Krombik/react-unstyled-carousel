@@ -15,7 +15,7 @@ import CarouselProvider from '../../providers/CarouselProvider';
 import identity from '../../utils/identity';
 import getCanceled from '../../utils/getCanceled';
 
-const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
+const Carousel = forwardRef<HTMLDivElement, PropsWithChildren<CarouselProps>>(
   (props, outerRef) => {
     const {
       viewOffset = 0,
@@ -42,6 +42,8 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
       ]
     >(() => {
       let setActive: (index: number | null) => void = noop;
+
+      const { carouselRef } = props;
 
       const data: CarouselData = {
         activeIndex:
@@ -103,6 +105,8 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
         lazy(innerData);
       }
 
+      setRef(carouselRef, data);
+
       return [
         innerData,
         data,
@@ -124,12 +128,12 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
 
             style.display = 'grid';
 
-            setRef(outerRef, data);
-
             innerData._finalize ||= innerData._jumpTo;
           } else {
-            setRef(outerRef, container);
+            setRef(carouselRef, container);
           }
+
+          setRef(outerRef, container);
         },
         (newSetActive) => {
           setActive = newSetActive;
@@ -237,7 +241,7 @@ const Carousel = forwardRef<CarouselData, PropsWithChildren<CarouselProps>>(
     );
   }
 ) as <T extends any>(
-  props: PropsWithChildren<CarouselProps<T>> & RefAttributes<CarouselData>
+  props: PropsWithChildren<CarouselProps<T>> & RefAttributes<HTMLDivElement>
 ) => JSX.Element;
 
 export { type CarouselProps, type CarouselData };

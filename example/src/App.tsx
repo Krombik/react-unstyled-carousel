@@ -26,7 +26,7 @@ const Home: VFC = () => {
       <div>
         <div>
           <Carousel
-            ref={kek}
+            carouselRef={kek}
             className='carousel'
             items={items}
             type={infinity}

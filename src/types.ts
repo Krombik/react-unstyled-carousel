@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, Ref } from 'react';
 
 type Falsy = false | undefined | null | 0 | '';
 
@@ -17,6 +17,7 @@ export type AutoSizeModule = {
 export type LazyModule = { (innerData: InternalData): void };
 
 export type CarouselProps<T = any> = {
+  carouselRef?: Ref<CarouselData>;
   items: T[];
   renderItem: (value: T, index: number) => JSX.Element;
   className?: string;
