@@ -1,14 +1,12 @@
-import { VFC, useEffect, useRef } from 'react';
+import { VFC, useRef } from 'react';
 import {
   Carousel,
-  autoSize,
   infinity,
   mouseSwipe,
   touchSwipe,
   transition,
   ease,
   lazy,
-  cubicBezier,
   easeOutQuart,
   CarouselData,
 } from 'react-unstyled-carousel';

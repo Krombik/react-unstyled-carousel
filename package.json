@@ -1,6 +1,6 @@
 {
   "name": "react-unstyled-carousel",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Fast, tree-shakable, and light-weight React carousel",
   "author": "Krombik",
   "license": "MIT",
@@ -30,11 +30,16 @@
       "optional": true
     }
   },
+  "dependencies": {
+    "lodash.noop": "^3.0.1",
+    "react-helpful-utils": "^1.0.0"
+  },
   "devDependencies": {
-    "@types/node": "^18.15.12",
-    "@types/react": "^18.0.37",
-    "@types/react-dom": "^18.0.11",
-    "prettier": "^2.8.7",
+    "@types/node": "^20.2.1",
+    "@types/lodash.noop": "^3.0.7",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.4",
+    "prettier": "^2.8.8",
     "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4"

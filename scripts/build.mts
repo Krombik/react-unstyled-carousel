@@ -38,6 +38,7 @@ const run = async (outDir: string) => {
         emitDeclarationOnly: true,
         declaration: true,
         stripInternal: true,
+        strictNullChecks: true,
         outDir,
         jsx: ts.JsxEmit.React,
       })

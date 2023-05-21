@@ -7,13 +7,13 @@ import React, {
   useLayoutEffect,
   useState,
 } from 'react';
-import setRef from '../../utils/setRef';
 import { CarouselProps, InternalData, CarouselData } from '../../types';
-import noop from '../../utils/noop';
-import useConst from '../../utils/useConst';
 import CarouselProvider from '../../providers/CarouselProvider';
 import identity from '../../utils/identity';
 import getCanceled from '../../utils/getCanceled';
+import useConst from 'react-helpful-utils/useConst';
+import noop from 'lodash.noop';
+import setRef from 'react-helpful-utils/setRef';
 
 const Carousel = forwardRef<HTMLDivElement, PropsWithChildren<CarouselProps>>(
   (props, outerRef) => {

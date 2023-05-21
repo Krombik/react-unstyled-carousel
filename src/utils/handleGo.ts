@@ -1,7 +1,7 @@
+import noop from 'lodash.noop';
 import { InternalData, TimingFunction, Duration } from '../types';
 import getCanceled from './getCanceled';
 import isFunction from './isFunction';
-import noop from './noop';
 
 /** @internal */
 const handleGo = (

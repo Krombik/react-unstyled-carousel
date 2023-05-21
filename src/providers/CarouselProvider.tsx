@@ -6,7 +6,7 @@ import React, {
   useState,
 } from 'react';
 import { CarouselData } from '../types';
-import noop from '../utils/noop';
+import noop from 'lodash.noop';
 
 type Props = PropsWithChildren<{
   data: CarouselData;

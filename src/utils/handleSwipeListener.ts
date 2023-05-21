@@ -1,6 +1,6 @@
+import noop from 'lodash.noop';
 import { ClientAxisKey, CarouselData, InternalData } from '../types';
 import { ORIENTATION_CHANGE_EVENT, RESIZE_EVENT } from './constants';
-import noop from './noop';
 
 const handleSwipeListener = <
   K extends 'mouse' | 'touch',
