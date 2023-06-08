@@ -7,13 +7,13 @@ import React, {
   useLayoutEffect,
   useState,
 } from 'react';
-import { CarouselProps, InternalData, CarouselData } from '../../types';
-import CarouselProvider from '../../providers/CarouselProvider';
-import identity from '../../utils/identity';
-import getCanceled from '../../utils/getCanceled';
+import { CarouselProps, InternalData, CarouselData } from '../types';
+import CarouselProvider from '../utils/CarouselProvider';
+import getCanceled from '../utils/getCanceled';
 import useConst from 'react-helpful-utils/useConst';
 import noop from 'lodash.noop';
 import setRef from 'react-helpful-utils/setRef';
+import identity from 'lodash.identity';
 
 const Carousel = forwardRef<HTMLDivElement, PropsWithChildren<CarouselProps>>(
   (props, outerRef) => {
@@ -81,7 +81,7 @@ const Carousel = forwardRef<HTMLDivElement, PropsWithChildren<CarouselProps>>(
       const innerData = {
         _lazy: noop as any,
         _currIndex: defaultIndex,
-        _handleIndex: identity,
+        _handleIndex: identity<number>,
         _forceRerender: t[1],
         _props: props,
         _render(props) {

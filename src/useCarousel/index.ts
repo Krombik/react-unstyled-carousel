@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { CarouselContext } from '../../providers/CarouselProvider';
+import { CarouselContext } from '../utils/CarouselProvider';
 
 const useCarousel = () => useContext(CarouselContext);
 

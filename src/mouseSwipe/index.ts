@@ -1,6 +1,6 @@
-import { SwipeModule } from '../../types';
-import handleSwipeListener from '../../utils/handleSwipeListener';
-import identity from '../../utils/identity';
+import identity from 'lodash.identity';
+import { SwipeModule } from '../types';
+import handleSwipeListener from '../utils/handleSwipeListener';
 
 const mouseSwipe: SwipeModule = (innerData, data) =>
   handleSwipeListener(

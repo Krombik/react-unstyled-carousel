@@ -1,4 +1,4 @@
-import { TypeModule } from '../../types';
+import { TypeModule } from '../types';
 
 const infinity: TypeModule = (innerData) => {
   const styles: CSSStyleDeclaration[] = [];

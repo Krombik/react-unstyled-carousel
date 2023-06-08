@@ -178,6 +178,13 @@
   resolved "https://registry.yarnpkg.com/@tsconfig/node16/-/node16-1.0.3.tgz#472eaab5f15c1ffdd7f8628bd4c4f753995ec79e"
   integrity sha512-yOlFc+7UtL/89t2ZhjPvvB/DeAr3r+Dq58IgzsFkOAvVC6NMJXmCGjbptdXdR9qsX7pKcTL+s87FtYREi2dEEQ==
 
+"@types/lodash.identity@^3.0.7":
+  version "3.0.7"
+  resolved "https://registry.yarnpkg.com/@types/lodash.identity/-/lodash.identity-3.0.7.tgz#93e42ed63c973059b0d62636c9b6d865b08629e2"
+  integrity sha512-B5OEo8XhJB2BS374Lyh+fOcKbCFQffOwT+iltWM7wndi7B7LhBankTq8w2oSmpqFRk2qVMe1k3ow1SEmkgo65Q==
+  dependencies:
+    "@types/lodash" "*"
+
 "@types/lodash.noop@^3.0.7":
   version "3.0.7"
   resolved "https://registry.yarnpkg.com/@types/lodash.noop/-/lodash.noop-3.0.7.tgz#aca002be9c74ce1dfbea24ec06c3f1debc9117e7"
@@ -554,6 +561,11 @@ load-tsconfig@^0.2.3:
   resolved "https://registry.yarnpkg.com/load-tsconfig/-/load-tsconfig-0.2.3.tgz#08af3e7744943caab0c75f8af7f1703639c3ef1f"
   integrity sha512-iyT2MXws+dc2Wi6o3grCFtGXpeMvHmJqS27sMPGtV2eUu4PeFnG+33I8BlFK1t1NWMjOpcx9bridn5yxLDX2gQ==
 
+lodash.identity@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/lodash.identity/-/lodash.identity-3.0.0.tgz#ad7bc6a4e647d79c972e1b80feef7af156267876"
+  integrity sha512-AupTIzdLQxJS5wIYUQlgGyk2XRTfGXA+MCghDHqZk0pzUNYvd3EESS6dkChNauNYVIutcb0dfHw1ri9Q1yPV8Q==
+
 lodash.noop@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/lodash.noop/-/lodash.noop-3.0.1.tgz#38188f4d650a3a474258439b96ec45b32617133c"
@@ -692,10 +704,10 @@ queue-microtask@^1.2.2:
   resolved "https://registry.yarnpkg.com/queue-microtask/-/queue-microtask-1.2.3.tgz#4929228bbc724dfac43e0efb058caf7b6cfb6243"
   integrity sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==
 
-react-helpful-utils@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/react-helpful-utils/-/react-helpful-utils-1.0.0.tgz#d714c3e4f0e5f84604290621d27a8ebc1eeacbd4"
-  integrity sha512-bflkbC4G8RmjGEZfuHSZhig09Vsk703dVeYiRyhkeFipTBtMFyRK7T0P5SQ+E3gnxH1Sg0DT+2kXmil3UmQseQ==
+react-helpful-utils@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/react-helpful-utils/-/react-helpful-utils-1.0.1.tgz#c9b695c92bd4573d17957188de1affbf798f10d3"
+  integrity sha512-rEVpJhehqQwjm8p7JLHJI7w2A7U6mdU/tiFCxujfY2tSchNManR0Uthslp6qMb+IButWuHzHB13f9j0JqCjq5w==
 
 readdirp@~3.6.0:
   version "3.6.0"

@@ -1,6 +1,6 @@
-import { TransitionModule } from '../../types';
-import handleGo from '../../utils/handleGo';
-import identity from '../../utils/identity';
+import identity from 'lodash.identity';
+import { TransitionModule } from '../types';
+import handleGo from '../utils/handleGo';
 
 const transition: TransitionModule = (innerData) =>
   handleGo(innerData, identity, (index) => {

@@ -1,5 +1,5 @@
-import { SwipeModule } from '../../types';
-import handleSwipeListener from '../../utils/handleSwipeListener';
+import { SwipeModule } from '../types';
+import handleSwipeListener from '../utils/handleSwipeListener';
 
 const touchSwipe: SwipeModule = (innerData, data) =>
   handleSwipeListener(

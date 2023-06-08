@@ -1,5 +1,5 @@
-import { AutoSizeModule } from '../../types';
-import { ORIENTATION_CHANGE_EVENT, RESIZE_EVENT } from '../../utils/constants';
+import { AutoSizeModule } from '../types';
+import { ORIENTATION_CHANGE_EVENT, RESIZE_EVENT } from '../utils/constants';
 
 const autoSize: AutoSizeModule = (innerData, viewOffset) => {
   let handle: number;

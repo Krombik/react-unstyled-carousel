@@ -1,4 +1,4 @@
-import { LazyModule } from '../../types';
+import { LazyModule } from '../types';
 
 const lazy: LazyModule = (innerData) => {
   const props = innerData._props;

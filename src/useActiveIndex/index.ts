@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { CarouselActiveContext } from '../../providers/CarouselProvider';
+import { CarouselActiveContext } from '../utils/CarouselProvider';
 
 const useActiveIndex = () => useContext(CarouselActiveContext);
 
